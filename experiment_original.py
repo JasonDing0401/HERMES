@@ -544,8 +544,6 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
         output_file_path = os.path.join(directory, "classifier_output/" + output_file_name)
         if fold_count > options.fold_to_run:
             break
-        with open("result.txt", "a") as f:
-            f.write("Processing fold number: {}\n".format(fold_count))
         print("Processing fold number: {}".format(fold_count))
         calculate_vocabulary(records, train_data_indices, commit_message_vectorizer,
                              issue_vectorizer, patch_vectorizer, options)
@@ -565,8 +563,6 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
         patch_x_test, patch_y_test = calculate_patch_feature_vector(test_data, patch_vectorizer)
 
         for positive_weight in positive_weights:
-            with open("result.txt", "a") as f:
-                f.write("Current processing weight set ({},{})\n".format(positive_weight, 1 - positive_weight))
             print("Current processing weight set ({},{})".format(positive_weight, 1 - positive_weight))
             log_classifier = weight_to_log_classifier[positive_weight]
 
@@ -581,8 +577,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
             # calculate precision, recall for log message classification
             precision, recall, f1, log_message_prediction, log_message_train_predict_prob, log_message_test_predict_prob, false_positives, false_negatives\
                 = log_message_classify(log_classifier, log_x_train, log_y_train, log_x_test, log_y_test)
-            with open("result.txt", "a") as f:
-                f.write("Message F1: {}\n".format(f1))
+
             print("Message F1: {}".format(f1))
             # print("Top features for log message classifier:")
             # retrieve_top_features(log_classifier, commit_message_vectorizer)
@@ -599,8 +594,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
             if options.use_issue_classifier:
                 precision, recall, f1, issue_prediction, id_to_issue_train_predict_prob, id_to_issue_test_predict_prob, false_positives, false_negatives\
                     = issue_classify(issue_classifier, issue_x_train, issue_y_train, issue_x_test, issue_y_test, train_data, test_data)
-                with open("result.txt", "a") as f:
-                    f.write("Issue F1: {}\n".format(f1))
+
                 print("Issue F1: {}".format(f1))
                 # print("Top features for issue classifier:")
                 # retrieve_top_features(issue_classifier, issue_vectorizer)
@@ -617,8 +611,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
             precision, recall, f1, patch_prediction, patch_train_predict_prob, patch_test_predict_prob, false_positives, false_negatives\
                 = patch_classify(patch_classifier, patch_x_train, patch_y_train, patch_x_test, patch_y_test)
-            with open("result.txt", "a") as f:
-                f.write("Patch F1: {}\n".format(f1))
+
             print("Patch F1: {}".format(f1))
             # print("Top features for patch classifier:")
             # retrieve_top_features(patch_classifier, patch_vectorizer)
@@ -660,37 +653,20 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
             weight_to_joint_auc_roc[positive_weight].append(joint_auc_roc)
             weight_to_joint_auc_pr[positive_weight].append(joint_auc_pr)
 
+        break
     print_line_seperator()
 
     for positive_weight in positive_weights:
-        with open("result.txt", "a") as f:
-            f.write("Training result for positive weight: {}, negative weight: {}\n".format(positive_weight, 1 - positive_weight))
-            f.write("Log message mean precision: {}\n".format(np.mean(weight_to_log_precisions[positive_weight])))
-            f.write("Log message mean recall: {}\n".format(np.mean(weight_to_log_recalls[positive_weight])))
-            f.write("Log message mean f1: {}\n".format(np.mean(weight_to_log_f1s[positive_weight])))
         print("Training result for positive weight: {}, negative weight: {}".format(positive_weight, 1 - positive_weight))
         print("Log message mean precision: {}".format(np.mean(weight_to_log_precisions[positive_weight])))
         print("Log message mean recall: {}".format(np.mean(weight_to_log_recalls[positive_weight])))
         print("Log message mean f1: {}".format(np.mean(weight_to_log_f1s[positive_weight])))
 
         if options.use_issue_classifier:
-            with open("result.txt", "a") as f:
-                f.write("Issue mean precision: {}\n".format(np.mean(weight_to_issue_precisions[positive_weight])))
-                f.write("Issue mean recall: {}\n".format(np.mean(weight_to_issue_recalls[positive_weight])))
-                f.write("Issue mean f1: {}\n".format(np.mean(weight_to_issue_f1s[positive_weight])))
             print("Issue mean precision: {}".format(np.mean(weight_to_issue_precisions[positive_weight])))
             print("Issue mean recall: {}".format(np.mean(weight_to_issue_recalls[positive_weight])))
             print("Issue mean f1: {}".format(np.mean(weight_to_issue_f1s[positive_weight])))
-        with open("result.txt", "a") as f:
-            f.write("Patch mean precision: {}\n".format(np.mean(weight_to_patch_precisions[positive_weight])))
-            f.write("Patch mean recall: {}\n".format(np.mean(weight_to_patch_recalls[positive_weight])))
-            f.write("Patch mean f1: {}\n".format(np.mean(weight_to_patch_f1s[positive_weight])))
 
-            f.write("Joint-model mean precision: {}\n".format(np.mean(weight_to_joint_precisions[positive_weight])))
-            f.write("Joint-model mean recall: {}\n".format(np.mean(weight_to_joint_recalls[positive_weight])))
-            f.write("Joint-model mean f1: {}\n".format(np.mean(weight_to_joint_f1s[positive_weight])))
-            f.write("Joint-model mean AUC-ROC: {}\n".format(np.mean(weight_to_joint_auc_roc[positive_weight])))
-            f.write("Joint-model mean AUC-PR: {}\n".format(np.mean(weight_to_joint_auc_pr[positive_weight])))
         print("Patch mean precision: {}".format(np.mean(weight_to_patch_precisions[positive_weight])))
         print("Patch mean recall: {}".format(np.mean(weight_to_patch_recalls[positive_weight])))
         print("Patch mean f1: {}".format(np.mean(weight_to_patch_f1s[positive_weight])))
