@@ -462,6 +462,7 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
     print_line_seperator()
 
     records = data_loader.load_records(os.path.join(directory, 'MSR2019/experiment/full_dataset_with_all_features.txt'))
+    print("original length of records", len(records))
 
     new_records = []
     for record in records:

@@ -16,10 +16,10 @@ import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
 from joblib import dump, load
+import json
 
 np.random.seed(109)
 
-file_path = 'MSR2019/experiment/full_dataset_with_all_features.txt'
 options = feature_options.ExperimentOption()
 
 
@@ -100,14 +100,14 @@ def retrieve_false_positive_negative(y_pred, y_test):
     return false_positives, false_negatives
 
 
-def svm_classify(classifier, x_train, x_test, y_train, y_test):
-    classifier.fit(x_train, y_train)
+def svm_classify(classifier, x_test, y_test):
+    # classifier.fit(x_train, y_train)
 
     y_pred = classifier.predict(x_test)
 
-    train_predict_prob = []
-    for predict_prob in classifier.predict_proba(x_train):
-        train_predict_prob.append(predict_prob[0])
+    # train_predict_prob = []
+    # for predict_prob in classifier.predict_proba(x_train):
+    #     train_predict_prob.append(predict_prob[0])
 
     test_predict_prob = []
     for predict_prob in classifier.predict_proba(x_test):
@@ -117,7 +117,7 @@ def svm_classify(classifier, x_train, x_test, y_train, y_test):
 
     return classifier, metrics.precision_score(y_true=y_test, y_pred=y_pred), \
            metrics.recall_score(y_true=y_test, y_pred=y_pred), \
-           metrics.f1_score(y_true=y_test, y_pred=y_pred), y_pred, train_predict_prob, test_predict_prob, false_positives, false_negatives
+           metrics.f1_score(y_true=y_test, y_pred=y_pred), y_pred, test_predict_prob, false_positives, false_negatives
 
 
 def retrieve_label(records):
@@ -173,16 +173,16 @@ def log_message_classify(classifier, x_train, y_train, x_test, y_test):
     return classifier, precision, recall, f1, log_message_pred, log_message_train_predict_prob, log_message_test_predict_prob, false_positives, false_negatives
 
 
-def issue_classify(classifier, x_train, y_train, x_test, y_test, train_data, test_data):
-    classifier, precision, recall, f1, issue_pred, issue_train_predict_prob, issue_test_predict_prob, false_positives, false_negatives\
-        = svm_classify(classifier, x_train, x_test, y_train, y_test)
+def issue_classify(classifier, x_test, y_test, test_data):
+    classifier, precision, recall, f1, issue_pred, issue_test_predict_prob, false_positives, false_negatives\
+        = svm_classify(classifier, x_test, y_test)
 
-    id_to_issue_train_predict_prob = {}
-    index = 0
-    for record in train_data:
-        if record.issue_info != '':
-            id_to_issue_train_predict_prob[record.id] = issue_train_predict_prob[index]
-            index += 1
+    # id_to_issue_train_predict_prob = {}
+    # index = 0
+    # for record in train_data:
+    #     if record.issue_info != '':
+    #         id_to_issue_train_predict_prob[record.id] = issue_train_predict_prob[index]
+    #         index += 1
 
 
     id_to_issue_test_predict_prob = {}
@@ -193,18 +193,18 @@ def issue_classify(classifier, x_train, y_train, x_test, y_test, train_data, tes
             index += 1
 
     return classifier, precision, recall, f1, \
-           issue_pred, id_to_issue_train_predict_prob, id_to_issue_test_predict_prob, \
+           issue_pred, id_to_issue_test_predict_prob, \
            false_positives, false_negatives
 
 
-def patch_classify(classifier, x_train, y_train, x_test, y_test):
+def patch_classify(classifier, x_test, y_test):
     # print("Start patch classification...")
 
-    classifier, precision, recall, f1, patch_pred, patch_train_predict_prob, patch_test_predict_prob, false_positives, false_negatives\
-        = svm_classify(classifier, x_train, x_test, y_train, y_test)
+    classifier, precision, recall, f1, patch_pred, patch_test_predict_prob, false_positives, false_negatives\
+        = svm_classify(classifier, x_test, y_test)
     # print("Precision: {}".format(precision))
     # print("Recall: {}".format(recall))
-    return classifier, precision, recall, f1, patch_pred, patch_train_predict_prob, patch_test_predict_prob, false_positives, false_negatives
+    return classifier, precision, recall, f1, patch_pred, patch_test_predict_prob, false_positives, false_negatives
 
 
 def retrieve_data(records, train_data_indices, test_data_indices):
@@ -248,43 +248,42 @@ def measure_joint_model(log_message_prediction, issue_prediction, patch_predicti
     auc_roc = metrics.roc_auc_score(y_true=test_data_labels, y_score=y_pos_probs)
     auc_pr = metrics.average_precision_score(y_true=test_data_labels, y_score=y_pos_probs)
 
-    return precision, recall, f1, auc_roc, auc_pr
+    return join_prediction, precision, recall, f1, auc_roc, auc_pr
 
 
-def measure_joint_model_using_logistic_regression(train_data, test_data, log_message_train_predict_prob, id_to_issue_train_predict_prob,
+def measure_joint_model_using_logistic_regression(ensemble_classifier, test_data, log_message_train_predict_prob, id_to_issue_train_predict_prob,
                                                   patch_train_predict_prob, log_message_test_predict_prob, id_to_issue_test_predict_prob,
-                                                  patch_test_predict_prob, options, output_file_name):
-    ensemble_classifier = LogisticRegression()
-
-    issue_train_mean_probability = None
+                                                  patch_test_predict_prob, options):
+    # issue_train_mean_probability = None
     issue_test_mean_probability = None
 
     if options.use_issue_classifier:
-        issue_train_mean_probability = np.mean([prob for id, prob in id_to_issue_train_predict_prob.items()])
+        # issue_train_mean_probability = np.mean([prob for id, prob in id_to_issue_train_predict_prob.items()])
         issue_test_mean_probability = np.mean([prob for id, prob in id_to_issue_test_predict_prob.items()])
 
 
-    y_train = retrieve_label(train_data)
-    X_train = []
-    lines = ""
-    for index in range(len(train_data)):
-        if options.use_issue_classifier:
-            if train_data[index].id in id_to_issue_train_predict_prob:
-                X_train.append([log_message_train_predict_prob[index],
-                                id_to_issue_train_predict_prob[train_data[index].id],
-                                patch_train_predict_prob[index]])
-                lines = lines + str(log_message_train_predict_prob[index]) + '\t\t' \
-                        + str(id_to_issue_train_predict_prob[train_data[index].id]) \
-                        + '\t\t' + str(patch_train_predict_prob[index]) + '\n'
-            else:
-                X_train.append(
-                    [log_message_train_predict_prob[index],
-                     issue_train_mean_probability,
-                     patch_train_predict_prob[index]])
-        else:
-            X_train.append([log_message_train_predict_prob[index], patch_train_predict_prob[index]])
+    # y_train = retrieve_label(train_data)
+    # X_train = []
+    # lines = ""
+    # for index in range(len(train_data)):
+    #     if options.use_issue_classifier:
+    #         if train_data[index].id in id_to_issue_train_predict_prob:
+    #             X_train.append([log_message_train_predict_prob[index],
+    #                             id_to_issue_train_predict_prob[train_data[index].id],
+    #                             patch_train_predict_prob[index]])
+    #             lines = lines + str(log_message_train_predict_prob[index]) + '\t\t' \
+    #                     + str(id_to_issue_train_predict_prob[train_data[index].id]) \
+    #                     + '\t\t' + str(patch_train_predict_prob[index]) + '\n'
+    #         else:
+    #             X_train.append(
+    #                 [log_message_train_predict_prob[index],
+    #                  issue_train_mean_probability,
+    #                  patch_train_predict_prob[index]])
+    #     else:
+    #         X_train.append([log_message_train_predict_prob[index], patch_train_predict_prob[index]])
 
-    lines = lines + "@@\n"
+    # lines = lines + "@@\n"
+    lines = ""
     y_test = retrieve_label(test_data)
     X_test = []
     for index in range(len(test_data)):
@@ -307,7 +306,7 @@ def measure_joint_model_using_logistic_regression(train_data, test_data, log_mes
 
     lines = lines + "@@\n"
 
-    ensemble_classifier.fit(X=X_train, y=y_train)
+    # ensemble_classifier.fit(X=X_train, y=y_train)
     y_pred = ensemble_classifier.predict(X=X_test)
     y_prob = ensemble_classifier.predict_proba(X=X_test)[:, 1]
     joint_precision = metrics.precision_score(y_pred=y_pred, y_true=y_test)
@@ -317,13 +316,13 @@ def measure_joint_model_using_logistic_regression(train_data, test_data, log_mes
     joint_auc_pr = metrics.average_precision_score(y_true=y_test, y_score=y_prob)
     false_positives, false_negatives = retrieve_false_positive_negative(y_pred=y_pred, y_test=y_test)
 
-    for label in y_train:
-        lines = lines + str(label) + '\n'
-    lines = lines + "@@\n"
+    # for label in y_train:
+    #     lines = lines + str(label) + '\n'
+    # lines = lines + "@@\n"
 
     for label in y_test:
         lines = lines + str(label) + '\n'
-    return ensemble_classifier, joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr, false_positives, false_negatives, lines
+    return y_pred, joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr, false_positives, false_negatives, lines
 
 
 def get_list_value_from_string(input):
@@ -416,19 +415,18 @@ def retrieve_top_features(classifier, vectorizer):
 @click.option('--min_df', default=1)
 @click.option('--use_linked_commits_only', default=False, type=bool)
 @click.option('--use_issue_classifier', default=True, type=bool)
-@click.option('--fold_to_run', default=10, type=int)
+@click.option('--fold_to_run', default=10, type=int) # Not used
 @click.option('--use_stacking_ensemble', default=True, type=bool)
-@click.option('--dataset', default='', type=str)
+@click.option('--dataset', default='full_dataset_with_all_features.txt', type=str)
 @click.option('--tf-idf-threshold', default=-1, type=float)
 @click.option('--use-patch-context-lines', default=False, type=bool)
-@click.option('--run-fold', default=-1, type=int)
+@click.option('--run-fold', default=-1, type=int) # Not used
 def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, positive_weights, n_gram, min_df,
                   use_linked_commits_only, use_issue_classifier, fold_to_run, use_stacking_ensemble, dataset,
-                  tf_idf_threshold, use_patch_context_lines, run_fold):
+                  tf_idf_threshold, use_patch_context_lines):
 
     global file_path
-    if dataset != '':
-        file_path = 'MSR2019/experiment/' + dataset
+    file_path = 'prediction/php/' + dataset
 
     print("Dataset: {}".format(file_path))
 
@@ -453,8 +451,6 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
     records = data_loader.load_records(file_path)
 
-    random.shuffle(records)
-
     if options.use_linked_commits_only:
         new_records = []
         for record in records:
@@ -466,8 +462,6 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
         records = records[:options.data_set_size]
 
     records = preprocess_data(records, options)
-
-    k_fold = KFold(n_splits=10, shuffle=True, random_state=109)
 
     weight_to_log_classifier = {}
     weight_to_patch_classifier = {}
@@ -493,19 +487,18 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     weight_to_joint_auc_pr = {}
 
     for positive_weight in positive_weights:
-        negative_weight = 1 - positive_weight
-        weights = {1: positive_weight, 0: negative_weight}
-        log_classifier = svm.SVC(kernel='linear', class_weight=weights, probability=True)
-        patch_classifier = svm.SVC(kernel='linear', class_weight=weights, probability=True)
-        issue_classifier = svm.SVC(kernel='linear', class_weight=weights, probability=True)
-
-        weight_to_log_classifier[positive_weight] = log_classifier
-        weight_to_patch_classifier[positive_weight] = patch_classifier
-        weight_to_issue_classifier[positive_weight] = issue_classifier
-
-        weight_to_log_precisions[positive_weight] = []
-        weight_to_log_recalls[positive_weight] = []
-        weight_to_log_f1s[positive_weight] = []
+        print("loading model from model/ with pos weight {}".format(positive_weight))
+        with open('./model/log_classifier_weight-{}.joblib'.format(positive_weight), "rb") as f:
+            weight_to_log_classifier[positive_weight] = load(f)
+        if options.use_issue_classifier:
+            with open('./model/issue_classifier_weight-{}.joblib'.format(positive_weight), "rb") as f:
+                weight_to_issue_classifier[positive_weight] = load(f)
+        with open('./model/patch_classifier_weight-{}.joblib'.format(positive_weight), "rb") as f:
+            weight_to_patch_classifier[positive_weight] = load(f)
+        if options.use_stacking_ensemble:
+            with open('./model/joint_classifier_weight-{}.joblib'.format(positive_weight), "rb") as f:
+                weight_to_joint_classifier[positive_weight] = load(f)
+        print("done")
 
         weight_to_patch_precisions[positive_weight] = []
         weight_to_patch_recalls[positive_weight] = []
@@ -530,7 +523,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     false_positive_joint_records = []
     false_negative_joint_records = []
 
-    fold_count = 0
+    # fold_count = 0
 
     date = datetime.datetime.now().date()
     time = datetime.datetime.now().time()
@@ -538,152 +531,148 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
     directory = os.path.dirname(os.path.abspath(__file__))
 
-    for train_data_indices, test_data_indices in k_fold.split(records):
-        fold_count += 1
-        if run_fold != -1 and fold_count != run_fold:
-            continue
-        output_file_name = "fold_" + str(fold_count) + "_" + str(date) + "_" + str(time) + ".txt"
-        output_file_path = os.path.join(directory, "classifier_output/" + output_file_name)
-        if fold_count > options.fold_to_run:
-            break
-        with open("result.txt", "a") as f:
-            f.write("Processing fold number: {}\n".format(fold_count))
-        print("Processing fold number: {}".format(fold_count))
-        calculate_vocabulary(records, train_data_indices, commit_message_vectorizer,
-                             issue_vectorizer, patch_vectorizer, options)
+    # for train_data_indices, test_data_indices in k_fold.split(records):
+    # fold_count += 1
+    # if run_fold != -1 and fold_count != run_fold:
+    #     continue
+    output_file_name = "output" + "_" + str(date) + "_" + str(time) + ".txt"
+    output_file_path = os.path.join(directory, "classifier_output/" + output_file_name)
+    # if fold_count > options.fold_to_run:
+    #     break
+    # with open("result.txt", "a") as f:
+    #     f.write("Processing fold number: {}\n".format(fold_count))
+    # print("Processing fold number: {}".format(fold_count))
+    # calculate_vocabulary(records, train_data_indices, commit_message_vectorizer,
+    #                      issue_vectorizer, patch_vectorizer, options)
 
-        train_data, test_data = retrieve_data(records, train_data_indices, test_data_indices)
+    # train_data, test_data = retrieve_data(records, train_data_indices, test_data_indices)
+    test_data = records
+    # log_x_train, log_y_train = calculate_log_message_feature_vector(train_data, commit_message_vectorizer)
+    log_x_test, log_y_test = calculate_log_message_feature_vector(test_data, commit_message_vectorizer)
 
-        log_x_train, log_y_train = calculate_log_message_feature_vector(train_data, commit_message_vectorizer)
-        log_x_test, log_y_test = calculate_log_message_feature_vector(test_data, commit_message_vectorizer)
+    # issue_x_train, issue_y_train, issue_x_test, issue_y_test = None, None, None, None
+    issue_x_test, issue_y_test = None, None
 
-        issue_x_train, issue_y_train, issue_x_test, issue_y_test = None, None, None, None
+    if options.use_issue_classifier:
+        # issue_x_train, issue_y_train = calculate_issue_feature_vector(train_data, issue_vectorizer)
+        issue_x_test, issue_y_test = calculate_issue_feature_vector(test_data, issue_vectorizer)
 
-        if options.use_issue_classifier:
-            issue_x_train, issue_y_train = calculate_issue_feature_vector(train_data, issue_vectorizer)
-            issue_x_test, issue_y_test = calculate_issue_feature_vector(test_data, issue_vectorizer)
-
-        patch_x_train, patch_y_train = calculate_patch_feature_vector(train_data, patch_vectorizer)
-        patch_x_test, patch_y_test = calculate_patch_feature_vector(test_data, patch_vectorizer)
-
-        for positive_weight in positive_weights:
-            with open("result.txt", "a") as f:
-                f.write("Current processing weight set ({},{})\n".format(positive_weight, 1 - positive_weight))
-            print("Current processing weight set ({},{})".format(positive_weight, 1 - positive_weight))
-            log_classifier = weight_to_log_classifier[positive_weight]
-
-            issue_classifier = None
-            id_to_issue_train_predict_prob = None
-            id_to_issue_test_predict_prob = None
-            if options.use_issue_classifier:
-                issue_classifier = weight_to_issue_classifier[positive_weight]
-
-            patch_classifier = weight_to_patch_classifier[positive_weight]
-
-            # calculate precision, recall for log message classification
-            log_classifier, precision, recall, f1, log_message_prediction, log_message_train_predict_prob, log_message_test_predict_prob, false_positives, false_negatives\
-                = log_message_classify(log_classifier, log_x_train, log_y_train, log_x_test, log_y_test)
-            with open("result.txt", "a") as f:
-                f.write("Message F1: {}\n".format(f1))
-            print("Message F1: {}".format(f1))
-            # print("Top features for log message classifier:")
-            # retrieve_top_features(log_classifier, commit_message_vectorizer)
-            # print_line_seperator()
-            weight_to_log_classifier[positive_weight] = log_classifier
-            weight_to_log_precisions[positive_weight].append(precision)
-            weight_to_log_recalls[positive_weight].append(recall)
-            weight_to_log_f1s[positive_weight].append(f1)
-            false_positive_message_records.extend(to_record_ids(false_positives, test_data))
-            false_negative_message_records.extend(to_record_ids(false_negatives, test_data))
-
-            # calculate precision, recall for issue classification
-            precision, recall, f1, issue_prediction = None, None, None, None
-            if options.use_issue_classifier:
-                issue_classifier, precision, recall, f1, issue_prediction, id_to_issue_train_predict_prob, id_to_issue_test_predict_prob, false_positives, false_negatives\
-                    = issue_classify(issue_classifier, issue_x_train, issue_y_train, issue_x_test, issue_y_test, train_data, test_data)
-                with open("result.txt", "a") as f:
-                    f.write("Issue F1: {}\n".format(f1))
-                print("Issue F1: {}".format(f1))
-                # print("Top features for issue classifier:")
-                # retrieve_top_features(issue_classifier, issue_vectorizer)
-                # print_line_seperator()
-                weight_to_issue_classifier[positive_weight] = issue_classifier
-                weight_to_issue_precisions[positive_weight].append(precision)
-                weight_to_issue_recalls[positive_weight].append(recall)
-                weight_to_issue_f1s[positive_weight].append(f1)
-                false_positive_issue_records.extend(to_record_ids(false_positives, test_data))
-                false_negative_issue_records.extend(to_record_ids(false_negatives, test_data))
-
-
-            # calculate precision, recall for patch
-
-            patch_classifier, precision, recall, f1, patch_prediction, patch_train_predict_prob, patch_test_predict_prob, false_positives, false_negatives\
-                = patch_classify(patch_classifier, patch_x_train, patch_y_train, patch_x_test, patch_y_test)
-            with open("result.txt", "a") as f:
-                f.write("Patch F1: {}\n".format(f1))
-            print("Patch F1: {}".format(f1))
-            # print("Top features for patch classifier:")
-            # retrieve_top_features(patch_classifier, patch_vectorizer)
-            # print_line_seperator()
-            weight_to_patch_classifier[positive_weight] = patch_classifier
-            weight_to_patch_precisions[positive_weight].append(precision)
-            weight_to_patch_recalls[positive_weight].append(recall)
-            weight_to_patch_f1s[positive_weight].append(f1)
-            false_positive_patch_records.extend(to_record_ids(false_positives, test_data))
-            false_negative_patch_records.extend(to_record_ids(false_negatives, test_data))
-
-            # calculate precision, recall for joint-model
-            joint_precision, joint_recall, joint_f1 = None, None, None
-
-            if options.use_stacking_ensemble:
-                ensemble_classifier, joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr, false_positive_joint_records, false_negative_joint_records, output_lines \
-                    = measure_joint_model_using_logistic_regression(train_data=train_data,
-                                                                    test_data=test_data,
-                                                                    log_message_train_predict_prob=log_message_train_predict_prob,
-                                                                    id_to_issue_train_predict_prob=id_to_issue_train_predict_prob,
-                                                                    patch_train_predict_prob=patch_train_predict_prob,
-                                                                    log_message_test_predict_prob=log_message_test_predict_prob,
-                                                                    id_to_issue_test_predict_prob=id_to_issue_test_predict_prob,
-                                                                    patch_test_predict_prob=patch_test_predict_prob, options=options,
-                                                                    output_file_name = output_file_name)
-                false_positive_joint_records.extend(to_record_ids(false_positives, test_data))
-                false_negative_joint_records.extend(to_record_ids(false_negatives, test_data))
-                with open(output_file_path, 'w+') as f:
-                    f.write(output_lines)
-                f.close()
-                weight_to_joint_classifier[positive_weight] = ensemble_classifier
-            else:
-                joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr \
-                    = measure_joint_model(log_message_prediction, issue_prediction,
-                                          patch_prediction, log_message_test_predict_prob, patch_test_predict_prob, retrieve_label(test_data), options)
-
-            weight_to_joint_precisions[positive_weight].append(joint_precision)
-            weight_to_joint_recalls[positive_weight].append(joint_recall)
-            weight_to_joint_f1s[positive_weight].append(joint_f1)
-            weight_to_joint_auc_roc[positive_weight].append(joint_auc_roc)
-            weight_to_joint_auc_pr[positive_weight].append(joint_auc_pr)
-
-    print_line_seperator()
+    # patch_x_train, patch_y_train = calculate_patch_feature_vector(train_data, patch_vectorizer)
+    patch_x_test, patch_y_test = calculate_patch_feature_vector(test_data, patch_vectorizer)
 
     for positive_weight in positive_weights:
-        print("saving model to model/ with pos weight {}".format(positive_weight))
-        with open('./model/log_classifier_weight-{}.joblib'.format(positive_weight), "wb+") as f:
-            dump(weight_to_log_classifier[positive_weight], f)
+        with open("result.txt", "a") as f:
+            f.write("Current processing weight set ({},{})\n".format(positive_weight, 1 - positive_weight))
+        print("Current processing weight set ({},{})".format(positive_weight, 1 - positive_weight))
+        log_classifier = weight_to_log_classifier[positive_weight]
+
+        issue_classifier = None
+        # id_to_issue_train_predict_prob = None
+        id_to_issue_test_predict_prob = None
         if options.use_issue_classifier:
-            with open('./model/issue_classifier_weight-{}.joblib'.format(positive_weight), "wb+") as f:
-                dump(weight_to_issue_classifier[positive_weight], f)
-        with open('./model/patch_classifier_weight-{}.joblib'.format(positive_weight), "wb+") as f:
-            dump(weight_to_patch_classifier[positive_weight], f)
+            issue_classifier = weight_to_issue_classifier[positive_weight]
+
+        patch_classifier = weight_to_patch_classifier[positive_weight]
+
+        # calculate precision, recall for log message classification
+        log_classifier, precision, recall, f1, log_message_prediction, log_message_test_predict_prob, false_positives, false_negatives\
+            = log_message_classify(log_classifier, log_x_test, log_y_test)
+        with open("result.txt", "a") as f:
+            f.write("Message F1: {}\n".format(f1))
+        print("Message F1: {}".format(f1))
+
+        weight_to_log_precisions[positive_weight].append(precision)
+        weight_to_log_recalls[positive_weight].append(recall)
+        weight_to_log_f1s[positive_weight].append(f1)
+        false_positive_message_records.extend(to_record_ids(false_positives, test_data))
+        false_negative_message_records.extend(to_record_ids(false_negatives, test_data))
+
+        # calculate precision, recall for issue classification
+        precision, recall, f1, issue_prediction = None, None, None, None
+        if options.use_issue_classifier:
+            issue_classifier, precision, recall, f1, issue_prediction, id_to_issue_test_predict_prob, false_positives, false_negatives\
+                = issue_classify(issue_classifier, issue_x_test, issue_y_test, test_data)
+            with open("result.txt", "a") as f:
+                f.write("Issue F1: {}\n".format(f1))
+            print("Issue F1: {}".format(f1))
+
+            weight_to_issue_precisions[positive_weight].append(precision)
+            weight_to_issue_recalls[positive_weight].append(recall)
+            weight_to_issue_f1s[positive_weight].append(f1)
+            false_positive_issue_records.extend(to_record_ids(false_positives, test_data))
+            false_negative_issue_records.extend(to_record_ids(false_negatives, test_data))
+
+
+        # calculate precision, recall for patch
+
+        patch_classifier, precision, recall, f1, patch_prediction, patch_test_predict_prob, false_positives, false_negatives\
+            = patch_classify(patch_classifier, patch_x_test, patch_y_test)
+        with open("result.txt", "a") as f:
+            f.write("Patch F1: {}\n".format(f1))
+        print("Patch F1: {}".format(f1))
+
+        weight_to_patch_precisions[positive_weight].append(precision)
+        weight_to_patch_recalls[positive_weight].append(recall)
+        weight_to_patch_f1s[positive_weight].append(f1)
+        false_positive_patch_records.extend(to_record_ids(false_positives, test_data))
+        false_negative_patch_records.extend(to_record_ids(false_negatives, test_data))
+
+        # calculate precision, recall for joint-model
+        joint_precision, joint_recall, joint_f1 = None, None, None
+
         if options.use_stacking_ensemble:
-            with open('./model/joint_classifier_weight-{}.joblib'.format(positive_weight), "wb+") as f:
-                dump(weight_to_joint_classifier[positive_weight], f)
-        print("done")
+            ensemble_classifier = weight_to_joint_classifier[positive_weight]
+            y_pred, joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr, false_positive_joint_records, false_negative_joint_records, output_lines \
+                = measure_joint_model_using_logistic_regression(ensemble_classifier,
+                                                                test_data=test_data,
+                                                                log_message_test_predict_prob=log_message_test_predict_prob,
+                                                                id_to_issue_test_predict_prob=id_to_issue_test_predict_prob,
+                                                                patch_test_predict_prob=patch_test_predict_prob, options=options,
+                                                                output_file_name = output_file_name)
+            false_positive_joint_records.extend(to_record_ids(false_positives, test_data))
+            false_negative_joint_records.extend(to_record_ids(false_negatives, test_data))
+            with open(output_file_path, 'w+') as f:
+                f.write(output_lines)
+            f.close()
+        else:
+            y_pred, joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr \
+                = measure_joint_model(log_message_prediction, issue_prediction,
+                                        patch_prediction, log_message_test_predict_prob, patch_test_predict_prob, retrieve_label(test_data), options)
+
+        weight_to_joint_precisions[positive_weight].append(joint_precision)
+        weight_to_joint_recalls[positive_weight].append(joint_recall)
+        weight_to_joint_f1s[positive_weight].append(joint_f1)
+        weight_to_joint_auc_roc[positive_weight].append(joint_auc_roc)
+        weight_to_joint_auc_pr[positive_weight].append(joint_auc_pr)
+
+    # Write data and label to file
+    pred_list = []
+    assert len(test_data) == len(y_pred)
+    for i in range(len(test_data)):
+        dic = {}
+        data = test_data[i]
+        label = y_pred[i]
+        dic['id'] = data.id
+        dic['repo'] = data.repo
+        dic['commit_id'] = data.commit_id
+        dic['commit_message'] = data.commit_message
+        dic['label'] = int(label)
+        dic['jira_ticket_list'] = data.jira_ticket_list
+        dic['github_issue_list'] = data.github_issue_list
+        dic['commit'] = data.commit
+        pred_list.append(dic)
+
+    prediction_path = os.path.join(directory, "classifier_output/" + "prediction" +\
+        "_" + str(date) + "_" + str(time) + ".json")
+    
+    with open(prediction_path, "w+") as f:
+        json.dump(pred_list, f)
 
     print_line_seperator()
 
     for positive_weight in positive_weights:
         with open("result.txt", "a") as f:
-            f.write("Training result for positive weight: {}, negative weight: {}\n".format(positive_weight, 1 - positive_weight))
+            f.write("Testing result for positive weight: {}, negative weight: {}\n".format(positive_weight, 1 - positive_weight))
             f.write("Log message mean precision: {}\n".format(np.mean(weight_to_log_precisions[positive_weight])))
             f.write("Log message mean recall: {}\n".format(np.mean(weight_to_log_recalls[positive_weight])))
             f.write("Log message mean f1: {}\n".format(np.mean(weight_to_log_f1s[positive_weight])))
@@ -729,48 +718,3 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
 if __name__ == '__main__':
     do_experiment()
-
-# records = loader.load_records(file_path)
-# count_issue = 0
-# count_ticket = 0
-# count_both = 0
-# for record in records:
-#     if len(record.github_issue_list) > 0:
-#         count_issue += 1
-#     if len(record.jira_ticket_list) > 0:
-#         count_ticket += 1
-#     if len(record.github_issue_list) > 0 and len(record.jira_ticket_list) > 0:
-#         count_both +=1
-#
-# print(count_issue)
-# print(count_ticket)
-# print(count_both)
-
-# count_pos = 0
-# count_neg = 0
-# count_pos_all = 0
-# count_neg_all = 0
-# count_other = 0
-# records = loader.load_records(file_path)
-# for record in records:
-#     if record.label == 1:
-#         count_pos_all += 1
-#     if record.label == 0:
-#         count_neg_all += 1
-#     if record.label != 0 and record.label != 1:
-#         print(record)
-#     if len(record.github_issue_list) > 0 or len(record.jira_ticket_list) > 0:
-#         if record.label == 1:
-#             count_pos += 1
-#         if record.label == 0:
-#             count_neg += 1
-#
-#     if len(record.github_issue_list) == 0 and len(record.jira_ticket_list) == 0:
-#         count_other += 1
-#
-#
-# print(count_pos)
-# print(count_neg)
-# print(count_pos_all)
-# print(count_neg_all)
-# print(count_other)
