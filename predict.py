@@ -163,14 +163,14 @@ def calculate_patch_feature_vector(records, patch_vectorizer):
     return patch_features, target
 
 
-def log_message_classify(classifier, x_train, y_train, x_test, y_test):
+def log_message_classify(classifier, x_test, y_test):
     # print("Start log message classification...")
-    classifier, precision, recall, f1, log_message_pred, log_message_train_predict_prob, log_message_test_predict_prob, false_positives, false_negatives \
-        = svm_classify(classifier, x_train, x_test, y_train, y_test)
+    classifier, precision, recall, f1, log_message_pred, log_message_test_predict_prob, false_positives, false_negatives \
+        = svm_classify(classifier, x_test, y_test)
 
     # print("Precision: {}".format(precision))
     # print("Recall: {}".format(recall))
-    return classifier, precision, recall, f1, log_message_pred, log_message_train_predict_prob, log_message_test_predict_prob, false_positives, false_negatives
+    return classifier, precision, recall, f1, log_message_pred, log_message_test_predict_prob, false_positives, false_negatives
 
 
 def issue_classify(classifier, x_test, y_test, test_data):
@@ -251,8 +251,8 @@ def measure_joint_model(log_message_prediction, issue_prediction, patch_predicti
     return join_prediction, precision, recall, f1, auc_roc, auc_pr
 
 
-def measure_joint_model_using_logistic_regression(ensemble_classifier, test_data, log_message_train_predict_prob, id_to_issue_train_predict_prob,
-                                                  patch_train_predict_prob, log_message_test_predict_prob, id_to_issue_test_predict_prob,
+def measure_joint_model_using_logistic_regression(ensemble_classifier, test_data, 
+                                                  log_message_test_predict_prob, id_to_issue_test_predict_prob,
                                                   patch_test_predict_prob, options):
     # issue_train_mean_probability = None
     issue_test_mean_probability = None
@@ -297,10 +297,11 @@ def measure_joint_model_using_logistic_regression(ensemble_classifier, test_data
                         + '\t\t' + str(id_to_issue_test_predict_prob[test_data[index].id]) \
                         + '\t\t' + str(patch_test_predict_prob[index]) + '\n'
             else:
+                # TODO: This might be a bug in the original file
                 X_test.append(
-                    [log_message_train_predict_prob[index],
+                    [log_message_test_predict_prob[index],
                      issue_test_mean_probability,
-                     patch_train_predict_prob[index]])
+                     patch_test_predict_prob[index]])
         else:
             X_test.append([log_message_test_predict_prob[index], patch_test_predict_prob[index]])
 
@@ -423,8 +424,9 @@ def retrieve_top_features(classifier, vectorizer):
 @click.option('--run-fold', default=-1, type=int) # Not used
 def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, positive_weights, n_gram, min_df,
                   use_linked_commits_only, use_issue_classifier, fold_to_run, use_stacking_ensemble, dataset,
-                  tf_idf_threshold, use_patch_context_lines):
-
+                  tf_idf_threshold, use_patch_context_lines, run_fold):
+    # python predict.py --min_df 5 --use_linked_commits_only False --use_issue_classifier True 
+    # --use_stacking_ensemble True --use-patch-context-lines False --tf-idf-threshold 0.005
     global file_path
     file_path = 'prediction/php/' + dataset
 
@@ -440,13 +442,14 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                                                             tf_idf_threshold,
                                                             use_patch_context_lines)
 
-    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram))
-
-    issue_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram),
-                                       min_df=options.min_document_frequency)
-
-    patch_vectorizer = CountVectorizer()
-
+    print("loading vectorizer from model/")
+    with open("./model/commit_message_vectorizer.joblib", "rb") as f:
+        commit_message_vectorizer = load(f)
+    with open("./model/issue_vectorizer.joblib", "rb") as f:
+        issue_vectorizer = load(f)
+    with open("./model/patch_vectorizer.joblib", "rb") as f:
+        patch_vectorizer = load(f)
+    print("done")
     positive_weights = options.positive_weights
 
     records = data_loader.load_records(file_path)
@@ -499,6 +502,10 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
             with open('./model/joint_classifier_weight-{}.joblib'.format(positive_weight), "rb") as f:
                 weight_to_joint_classifier[positive_weight] = load(f)
         print("done")
+
+        weight_to_log_precisions[positive_weight] = []
+        weight_to_log_recalls[positive_weight] = []
+        weight_to_log_f1s[positive_weight] = []
 
         weight_to_patch_precisions[positive_weight] = []
         weight_to_patch_recalls[positive_weight] = []
@@ -627,8 +634,8 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                                                                 test_data=test_data,
                                                                 log_message_test_predict_prob=log_message_test_predict_prob,
                                                                 id_to_issue_test_predict_prob=id_to_issue_test_predict_prob,
-                                                                patch_test_predict_prob=patch_test_predict_prob, options=options,
-                                                                output_file_name = output_file_name)
+                                                                patch_test_predict_prob=patch_test_predict_prob,
+                                                                options=options)
             false_positive_joint_records.extend(to_record_ids(false_positives, test_data))
             false_negative_joint_records.extend(to_record_ids(false_negatives, test_data))
             with open(output_file_path, 'w+') as f:
@@ -648,19 +655,27 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     # Write data and label to file
     pred_list = []
     assert len(test_data) == len(y_pred)
+    with open(file_path, "r") as f:
+        pred_list = json.load(f)
+    assert len(test_data) == len(pred_list)
     for i in range(len(test_data)):
-        dic = {}
-        data = test_data[i]
-        label = y_pred[i]
-        dic['id'] = data.id
-        dic['repo'] = data.repo
-        dic['commit_id'] = data.commit_id
-        dic['commit_message'] = data.commit_message
-        dic['label'] = int(label)
-        dic['jira_ticket_list'] = data.jira_ticket_list
-        dic['github_issue_list'] = data.github_issue_list
-        dic['commit'] = data.commit
-        pred_list.append(dic)
+        data = pred_list[i]
+        assert data['id'] == test_data[i].id
+        data['label'] = int(y_pred[i])
+        pred_list[i] = data
+    # for i in range(len(test_data)):
+    #     dic = {}
+    #     data = test_data[i]
+    #     label = y_pred[i]
+    #     dic['id'] = data.id
+    #     dic['repo'] = data.repo
+    #     dic['commit_id'] = data.commit_id
+    #     dic['commit_message'] = data.commit_message
+    #     dic['label'] = int(label)
+    #     dic['jira_ticket_list'] = data.jira_ticket_list
+    #     dic['github_issue_list'] = data.github_issue_list
+    #     dic['commit'] = data.commit
+    #     pred_list.append(dic)
 
     prediction_path = os.path.join(directory, "classifier_output/" + "prediction" +\
         "_" + str(date) + "_" + str(time) + ".json")
