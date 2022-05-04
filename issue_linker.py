@@ -13,6 +13,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import math
 import click
 import random
+from joblib import Parallel, delayed
+from functools import partial
 
 stemmer = PorterStemmer()
 stopwords_set = set(stopwords.words('english'))
@@ -222,6 +224,8 @@ def extract_commit_text_terms_parts(record):
         terms_parts = text_term
 
     for file in record.commit.files:
+        if not file.file_name:
+            continue
         if is_non_source_document(file.file_name) and file.patch is not None:
             text_term = extract_text(file.patch)
             if text_term is not None:
@@ -413,7 +417,8 @@ def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_c
         if record_count % 50 == 0:
             print("Finished {} records".format(record_count))
 
-    utils.write_lines(score_lines, similarity_scores_file_path)
+    # utils.write_lines(score_lines, similarity_scores_file_path)
+    return score_lines
 
 
 @click.command()
@@ -461,9 +466,9 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
     print("     Merge link: {}".format(merge_link))
     print_line_seperator()
 
-    records = data_loader.load_records(os.path.join(directory, 'MSR2019/experiment/full_dataset_with_all_features.txt'))
+    # records = data_loader.load_records(os.path.join(directory, 'MSR2019/experiment/full_dataset_with_all_features.txt'))
+    records = data_loader.load_records(os.path.join(directory, 'prediction/php/full_dataset_with_all_features.txt'))
     print("original length of records", len(records))
-
     new_records = []
     for record in records:
         # if testing => get the first jira issue of record
@@ -486,34 +491,23 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
         pass
 
     print("Start extract commit features...")
-    short_term_count = 0
+    # short_term_count = 0
     for record in records:
-        # if record.commit_id != 'fed39c3619825bd92990cf1aa7a4e85119e00a6e':
-        #     continue
         record.code_terms = extract_commit_code_terms(record)
-        # record.code_terms = ''
         if not using_code_terms_only:
             record.text_terms_parts = extract_commit_text_terms_parts(record)
 
-        need_print = False
-        for terms in record.text_terms_parts:
-            if len(terms) <= 10:
-                need_print = True
-        # if record.commit == '4dd6206547de8f694532579e37ba8103bafaeb1':
-        #     print(record.repo + '/commit/' + record.commit_id)
-        #     print(record.code_terms)
-        #     print("Text terms:")
-        #     for terms in record.text_terms_parts:
-        #         print(terms)
-        #     print_line_seperator()
-        #     input()
+        # need_print = False
+        # for terms in record.text_terms_parts:
+        #     if len(terms) <= 10:
+        #         need_print = True
 
-        if not need_print:
-            continue
-        short_term_count += 1
+        # if not need_print:
+        #     continue
+        # short_term_count += 1
 
     print("Finish extract commit features")
-    print(short_term_count)
+    # print(short_term_count)
 
     jira_tickets = []
     if test_true_link:
@@ -547,14 +541,6 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
         if not using_code_terms_only:
             issue.text_terms_parts = extract_issue_text_terms_parts(issue, limit_feature)
 
-        # if issue.name in ['CAMEL-16146', 'HADOOP-14246']:
-        #     print(issue.name)
-        #     print(issue.code_terms)
-        #     print("Text terms:")
-        #     for terms in issue.text_terms_parts:
-        #         print(terms)
-        #     print_line_seperator()
-        #     input()
     print("Finish extracting issue features")
     tfidf_vectorizer = TfidfVectorizer()
     if min_df != 1:
@@ -562,8 +548,9 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
     if max_df != 1:
         tfidf_vectorizer.max_df = max_df
 
-    calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_code_terms_only)
-
+    score_lines = Parallel(n_jobs=6)(delayed(calculate_similarity_scores)([record], jira_tickets, tfidf_vectorizer, using_code_terms_only) for record in records)
+    # score_lines = calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_code_terms_only)
+    utils.write_lines(score_lines, similarity_scores_file_path)
 
 if __name__ == '__main__':
     process_linking()
