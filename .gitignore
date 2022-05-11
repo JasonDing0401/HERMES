@@ -5,3 +5,4 @@ __pycache__/
 MSR2019/experiment/
 model/
 prediction/
+sim_scores/

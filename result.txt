@@ -48,3 +48,44 @@ Joint-model mean recall: 0.7305514782282503
 Joint-model mean f1: 0.810443958493042
 Joint-model mean AUC-ROC: 0.9212955900647819
 Joint-model mean AUC-PR: 0.8770483862726977
+
+train hermes no test set validate on entire set
+Processing fold number: 1
+Current processing weight set (0.5,0.5)
+Message F1: 0.8656280428432327
+Issue F1: 0.890959925442684
+Patch F1: 0.9733874605322508
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.9642082429501084
+Log message mean recall: 0.7853356890459364
+Log message mean f1: 0.8656280428432327
+Issue mean precision: 0.9428007889546351
+Issue mean recall: 0.8445229681978799
+Issue mean f1: 0.890959925442684
+Patch mean precision: 0.9944700460829493
+Patch mean recall: 0.9531802120141343
+Patch mean f1: 0.9733874605322508
+Joint-model mean precision: 0.960167714884696
+Joint-model mean recall: 0.8091872791519434
+Joint-model mean f1: 0.8782358581016297
+Joint-model mean AUC-ROC: 0.986583674097719
+Joint-model mean AUC-PR: 0.9586485746408833
+
+Using hermes to predict php (same as previous)
+Testing result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.3212121212121212
+Log message mean recall: 0.07658959537572255
+Log message mean f1: 0.12368728121353559
+Issue mean precision: 0.36553030303030304
+Issue mean recall: 0.27890173410404623
+Issue mean f1: 0.3163934426229508
+Patch mean precision: 0.3548951048951049
+Patch mean recall: 0.29335260115606937
+Patch mean f1: 0.32120253164556967
+Joint-model mean precision: 0.32558139534883723
+Joint-model mean recall: 0.10115606936416185
+Joint-model mean f1: 0.1543550165380375
+Joint-model mean AUC-ROC: 0.44141174230588964
+Joint-model mean AUC-PR: 0.3391082215303369
+
+Use php to predict php not link-recovered (training data is 90% of all data, 10 repeating times)

@@ -425,7 +425,7 @@ def retrieve_top_features(classifier, vectorizer):
 def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, positive_weights, n_gram, min_df,
                   use_linked_commits_only, use_issue_classifier, fold_to_run, use_stacking_ensemble, dataset,
                   tf_idf_threshold, use_patch_context_lines, run_fold):
-
+    # Train the model with all data including test set
     global file_path
     if dataset != '':
         file_path = 'MSR2019/experiment/' + dataset
@@ -442,12 +442,12 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                                                             tf_idf_threshold,
                                                             use_patch_context_lines)
 
-    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram))
+    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram), max_features=2700)
 
     issue_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram),
-                                       min_df=options.min_document_frequency)
+                                       min_df=options.min_document_frequency, max_features=7700)
 
-    patch_vectorizer = CountVectorizer()
+    patch_vectorizer = CountVectorizer(max_features=12600)
 
     positive_weights = options.positive_weights
 

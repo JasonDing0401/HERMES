@@ -415,7 +415,7 @@ def retrieve_top_features(classifier, vectorizer):
 @click.option('--min_df', default=1)
 @click.option('--use_linked_commits_only', default=False, type=bool)
 @click.option('--use_issue_classifier', default=True, type=bool)
-@click.option('--fold_to_run', default=10, type=int)
+@click.option('--fold_to_run', default=5, type=int)
 @click.option('--use_stacking_ensemble', default=True, type=bool)
 @click.option('--dataset', default='', type=str)
 @click.option('--tf-idf-threshold', default=-1, type=float)
@@ -426,9 +426,9 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                   tf_idf_threshold, use_patch_context_lines, run_fold):
 
     global file_path
-    if dataset != '':
-        file_path = 'MSR2019/experiment/' + dataset
-
+    # if dataset != '':
+    #     file_path = 'MSR2019/experiment/' + dataset
+    file_path = "./prediction/php/full_dataset_with_all_features.txt"
     print("Dataset: {}".format(file_path))
 
     options = feature_options.read_option_from_command_line(size, 0, ignore_number,
@@ -535,7 +535,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     time = str(time).replace(":", "_")
 
     directory = os.path.dirname(os.path.abspath(__file__))
-
+    # Note that the test and train indices are switched
     for train_data_indices, test_data_indices in k_fold.split(records):
         fold_count += 1
         if run_fold != -1 and fold_count != run_fold:
@@ -653,7 +653,6 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
             weight_to_joint_auc_roc[positive_weight].append(joint_auc_roc)
             weight_to_joint_auc_pr[positive_weight].append(joint_auc_pr)
 
-        break
     print_line_seperator()
 
     for positive_weight in positive_weights:

@@ -8,7 +8,7 @@ from utils import print_line_seperator
 
 def write_dataset_with_enhanced_issue(sim_scores_file_name, enhanced_data_file_name, score_threshold, limit, drop_empty):
     directory = os.path.dirname(os.path.abspath(__file__))
-    record_file_path = os.path.join(directory, "MSR2019/experiment/full_dataset_with_all_features.txt")
+    record_file_path = os.path.join(directory, "MSR2019/experiment/php_full_dataset_with_all_features.txt")
     record_with_enhanced_issue_file_path \
         = os.path.join(directory, enhanced_data_file_name)
 
@@ -424,8 +424,13 @@ def analyze_dataset():
 
 # analyze_dataset()
 
-write_dataset_with_enhanced_issue(sim_scores_file_name='sim_scores_limit_feature_07042021.txt',
-                                  enhanced_data_file_name='MSR2019/experiment/sub_enhanced_dataset_th_90.txt',
-                                  score_threshold=0.9,
+# write_dataset_with_enhanced_issue(sim_scores_file_name='sim_scores_limit_feature_07042021.txt',
+#                                   enhanced_data_file_name='enhanced_dataset_th_100.txt',
+#                                   score_threshold=1,
+#                                   limit=-1,
+#                                   drop_empty=True)
+write_dataset_with_enhanced_issue(sim_scores_file_name='texts.txt',
+                                  enhanced_data_file_name='enhanced_dataset_th_100.txt',
+                                  score_threshold=1,
                                   limit=-1,
                                   drop_empty=True)

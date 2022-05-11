@@ -418,7 +418,7 @@ def retrieve_top_features(classifier, vectorizer):
 @click.option('--use_issue_classifier', default=True, type=bool)
 @click.option('--fold_to_run', default=10, type=int) # Not used
 @click.option('--use_stacking_ensemble', default=True, type=bool)
-@click.option('--dataset', default='full_dataset_with_all_features.txt', type=str)
+@click.option('--dataset', default='php_enhanced_dataset_th_100.txt', type=str)
 @click.option('--tf-idf-threshold', default=-1, type=float)
 @click.option('--use-patch-context-lines', default=False, type=bool)
 @click.option('--run-fold', default=-1, type=int) # Not used
@@ -442,17 +442,57 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                                                             tf_idf_threshold,
                                                             use_patch_context_lines)
 
-    print("loading vectorizer from model/")
-    with open("./model/commit_message_vectorizer.joblib", "rb") as f:
-        commit_message_vectorizer = load(f)
-    with open("./model/issue_vectorizer.joblib", "rb") as f:
-        issue_vectorizer = load(f)
-    with open("./model/patch_vectorizer.joblib", "rb") as f:
-        patch_vectorizer = load(f)
-    print("done")
+    # print("loading vectorizer from model/")
+    # with open("./model/commit_message_vectorizer.joblib", "rb") as f:
+    #     commit_message_vectorizer = load(f)
+    # with open("./model/issue_vectorizer.joblib", "rb") as f:
+    #     issue_vectorizer = load(f)
+    # with open("./model/patch_vectorizer.joblib", "rb") as f:
+    #     patch_vectorizer = load(f)
+    # print("done")
+    # Different dataset generates different vocabulary as features for SVM.
+    # If we use hermes to predict php, then it will be impacted.
+    # Two methods: 1. use vectorizer with less features say 2000;
+    # 2. use less train data and predict for every different dataset.
+    # log: X has 2780 features, but SVC is expecting 6592 features as input.
+    # issue: X has 10517 features, but SVC is expecting 7742 features as input.
+    # patch: X has 12648 features, but SVC is expecting 29593 features as input.
+    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram), max_features=2700)
+    issue_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram),
+                                       min_df=options.min_document_frequency, max_features=7700)
+    patch_vectorizer = CountVectorizer(max_features=12600)
     positive_weights = options.positive_weights
-
     records = data_loader.load_records(file_path)
+    # records = preprocess_data(records, options)
+    # all_records = data_loader.load_records('./prediction/hermes+php/enhanced_dataset_th_100.txt')
+    # all_records = preprocess_data(all_records, options)
+    # calculate_vocabulary(records, list(range(len(records))), commit_message_vectorizer,
+    #                      issue_vectorizer, patch_vectorizer, options)
+    # test_data = records
+    # positive_weight = 0.5
+    # with open('./model/parameters_1fold/log_classifier_weight-{}.joblib'.format(positive_weight), "rb") as f:
+    #     log_classifier = load(f)
+    # with open('./model/parameters_1fold/issue_classifier_weight-{}.joblib'.format(positive_weight), "rb") as f:
+    #     issue_classifier = load(f)
+    # with open('./model/parameters_1fold/patch_classifier_weight-{}.joblib'.format(positive_weight), "rb") as f:
+    #     patch_classifier = load(f)
+
+    # try:
+    #     log_x_test, log_y_test = calculate_log_message_feature_vector(test_data, commit_message_vectorizer)
+    #     log_message_classify(log_classifier, log_x_test, log_y_test)
+    # except Exception as e:
+    #     print("log:", e)
+    # try:
+    #     issue_x_test, issue_y_test = calculate_issue_feature_vector(test_data, issue_vectorizer)
+    #     issue_classify(issue_classifier, issue_x_test, issue_y_test, test_data)
+    # except Exception as e:
+    #     print("issue:", e)
+    # try:
+    #     patch_x_test, patch_y_test = calculate_patch_feature_vector(test_data, patch_vectorizer)
+    #     patch_classify(patch_classifier, patch_x_test, patch_y_test)
+    # except Exception as e:
+    #     print("patch:", e)
+    print(len(records)) #1876
 
     if options.use_linked_commits_only:
         new_records = []
@@ -549,8 +589,8 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     # with open("result.txt", "a") as f:
     #     f.write("Processing fold number: {}\n".format(fold_count))
     # print("Processing fold number: {}".format(fold_count))
-    # calculate_vocabulary(records, train_data_indices, commit_message_vectorizer,
-    #                      issue_vectorizer, patch_vectorizer, options)
+    calculate_vocabulary(records, list(range(len(records))), commit_message_vectorizer,
+                         issue_vectorizer, patch_vectorizer, options)
 
     # train_data, test_data = retrieve_data(records, train_data_indices, test_data_indices)
     test_data = records

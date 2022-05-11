@@ -1,6 +1,9 @@
 # HERMES
 Auto Vulnernability Fix Commit Classification
 
+### My Own Comments
+All result_*.txt files are previous results. Please only focus on result.txt file.
+
 The dataset is available at location: MSR/2019/experiment/full_data_set_with_all_features.txt
 
 Watch our presentation at SANER 2022: https://www.youtube.com/watch?v=S4a3wpHbVTw
