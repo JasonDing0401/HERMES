@@ -329,7 +329,7 @@ def get_list_value_from_string(input):
     return list(map(float, input.strip('[]').split(',')))
 
 
-def retrieve_word_frequency():
+def retrieve_word_frequency(file_path):
     # do_experiment(get_list_value_from_string(sys.argv[1]))
     records = data_loader.load_records(file_path)
     records = preprocess_data(records, options)
@@ -344,9 +344,9 @@ def retrieve_word_frequency():
         if not words[i].isdigit():
             word_frequency_pair_list.append((words[i], frequencies[i]))
 
-    word_frequency_pair_list.sort(key=lambda x: x[1])
+    word_frequency_pair_list.sort(key=lambda x: x[1], reverse=True)
 
-    with open('MSR2019/experiment/statistics/term_frequencies.txt', 'w+') as file:
+    with open('./term_frequencies.txt', 'w+') as file:
         for word, frequencies in word_frequency_pair_list:
             file.write(str(frequencies) + '\t\t' + word + '\n')
 
@@ -428,7 +428,10 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     global file_path
     # if dataset != '':
     #     file_path = 'MSR2019/experiment/' + dataset
-    file_path = "./prediction/php/full_dataset_with_all_features.txt"
+    file_path = "./MSR2019/experiment/sub_enhanced_dataset_th_100.txt"
+    # file_path = "./MSR2019/experiment/full_dataset_with_all_features.txt"
+    # file_path = "./prediction/php/php_enhanced_dataset_th_100.txt"
+    # file_path = "./prediction/php/full_dataset_with_all_features.txt"
     print("Dataset: {}".format(file_path))
 
     options = feature_options.read_option_from_command_line(size, 0, ignore_number,
@@ -685,6 +688,11 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
 if __name__ == '__main__':
     do_experiment()
+    # file_path = "./prediction/php/php_enhanced_dataset_th_100.txt"
+    # file_path = "./MSR2019/experiment/sub_enhanced_dataset_th_100.txt"
+    # print("Dataset: {}".format(file_path))
+    # retrieve_word_frequency(file_path)
+
 
 # records = loader.load_records(file_path)
 # count_issue = 0

@@ -15,6 +15,7 @@ import click
 import random
 from joblib import Parallel, delayed
 from functools import partial
+import time
 
 stemmer = PorterStemmer()
 stopwords_set = set(stopwords.words('english'))
@@ -468,8 +469,9 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
     print_line_seperator()
 
     # records = data_loader.load_records(os.path.join(directory, 'MSR2019/experiment/full_dataset_with_all_features.txt'))
-    records = data_loader.load_records(os.path.join(directory, 'prediction/redis/full_dataset_with_all_features.txt'))
+    records = data_loader.load_records(os.path.join(directory, 'prediction/php/full_dataset_with_all_features.txt'))
     print("original length of records", len(records))
+
     new_records = []
     for record in records:
         # if testing => get the first jira issue of record
@@ -486,6 +488,8 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
     # random.shuffle(records)
 
     print("Records length: {}".format(len(records)))
+    records = [records[0]]
+    start_time = time.time()
     # todo for testing only
     if testing:
         records = records[:1000]
@@ -548,9 +552,12 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
         tfidf_vectorizer.min_df = min_df
     if max_df != 1:
         tfidf_vectorizer.max_df = max_df
-
-    score_lines = Parallel(n_jobs=6)(delayed(calculate_similarity_scores)([record], jira_tickets, tfidf_vectorizer, using_code_terms_only) for record in records)
-    # score_lines = calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_code_terms_only)
+    start_time_2 = time.time()
+    # score_lines = Parallel(n_jobs=6)(delayed(calculate_similarity_scores)([record], jira_tickets, tfidf_vectorizer, using_code_terms_only) for record in records)
+    score_lines = calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_code_terms_only)
+    finish_time = time.time()
+    print("My program took", finish_time - start_time, "to run")
+    print("My program2 took", finish_time - start_time_2, "to run")
     utils.write_lines(score_lines, similarity_scores_file_path)
 
 if __name__ == '__main__':
