@@ -426,9 +426,12 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                   use_linked_commits_only, use_issue_classifier, fold_to_run, use_stacking_ensemble, dataset,
                   tf_idf_threshold, use_patch_context_lines, run_fold):
     # Train the model with all data including test set
+    # python train.py --min_df 5 --use_linked_commits_only False --use_issue_classifier True --use_stacking_ensemble True --use-patch-context-lines False --tf-idf-threshold 0.005
     global file_path
     if dataset != '':
         file_path = 'MSR2019/experiment/' + dataset
+    else:
+        file_path = 'prediction/php/php_enhanced_dataset_th_100.txt'
 
     print("Dataset: {}".format(file_path))
 
@@ -442,12 +445,12 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                                                             tf_idf_threshold,
                                                             use_patch_context_lines)
 
-    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram), max_features=2700)
+    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram))
 
     issue_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram),
-                                       min_df=options.min_document_frequency, max_features=7700)
+                                       min_df=options.min_document_frequency)
 
-    patch_vectorizer = CountVectorizer(max_features=12600)
+    patch_vectorizer = CountVectorizer()
 
     positive_weights = options.positive_weights
 
@@ -467,7 +470,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
     records = preprocess_data(records, options)
 
-    k_fold = KFold(n_splits=10, shuffle=True, random_state=109)
+    # k_fold = KFold(n_splits=10, shuffle=True, random_state=109)
 
     weight_to_log_classifier = {}
     weight_to_patch_classifier = {}
@@ -541,7 +544,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     test_data_indices = list(range(len(records)))
     fold_count += 1
     output_file_name = "fold_" + str(fold_count) + "_" + str(date) + "_" + str(time) + ".txt"
-    output_file_path = os.path.join(directory, "classifier_output/" + output_file_name)
+    # output_file_path = os.path.join(directory, "classifier_output/" + output_file_name)
     with open("result.txt", "a") as f:
         f.write("Processing fold number: {}\n".format(fold_count))
     print("Processing fold number: {}".format(fold_count))

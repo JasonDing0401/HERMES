@@ -442,14 +442,14 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                                                             tf_idf_threshold,
                                                             use_patch_context_lines)
 
-    # print("loading vectorizer from model/")
-    # with open("./model/commit_message_vectorizer.joblib", "rb") as f:
-    #     commit_message_vectorizer = load(f)
-    # with open("./model/issue_vectorizer.joblib", "rb") as f:
-    #     issue_vectorizer = load(f)
-    # with open("./model/patch_vectorizer.joblib", "rb") as f:
-    #     patch_vectorizer = load(f)
-    # print("done")
+    print("loading vectorizer from model/")
+    with open("./model/commit_message_vectorizer.joblib", "rb") as f:
+        commit_message_vectorizer = load(f)
+    with open("./model/issue_vectorizer.joblib", "rb") as f:
+        issue_vectorizer = load(f)
+    with open("./model/patch_vectorizer.joblib", "rb") as f:
+        patch_vectorizer = load(f)
+    print("done")
     # Different dataset generates different vocabulary as features for SVM.
     # If we use hermes to predict php, then it will be impacted.
     # Two methods: 1. use vectorizer with less features say 2000;
@@ -457,10 +457,10 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     # log: X has 2780 features, but SVC is expecting 6592 features as input.
     # issue: X has 10517 features, but SVC is expecting 7742 features as input.
     # patch: X has 12648 features, but SVC is expecting 29593 features as input.
-    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram), max_features=2700)
+    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram))
     issue_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram),
-                                       min_df=options.min_document_frequency, max_features=7700)
-    patch_vectorizer = CountVectorizer(max_features=12600)
+                                       min_df=options.min_document_frequency)
+    patch_vectorizer = CountVectorizer()
     positive_weights = options.positive_weights
     records = data_loader.load_records(file_path)
     # records = preprocess_data(records, options)

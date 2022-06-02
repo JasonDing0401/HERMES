@@ -16,6 +16,7 @@ import random
 from joblib import Parallel, delayed
 from functools import partial
 import time
+import pickle
 
 stemmer = PorterStemmer()
 stopwords_set = set(stopwords.words('english'))
@@ -488,13 +489,13 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
     # random.shuffle(records)
 
     print("Records length: {}".format(len(records)))
-    records = [records[0]]
-    start_time = time.time()
+    # records = [records[0]]
+    # start_time = time.time()
     # todo for testing only
     if testing:
-        records = records[:1000]
-        pass
-
+        records = records[:2]
+        # pass
+    records = records[:2]
     print("Start extract commit features...")
     # short_term_count = 0
     for record in records:
@@ -547,17 +548,24 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
             issue.text_terms_parts = extract_issue_text_terms_parts(issue, limit_feature)
 
     print("Finish extracting issue features")
+
+    with open("issue_corpus_processed.txt", "wb+") as f:
+        pickle.dump(jira_tickets, f)
+    
+    with open("issue_corpus_processed.txt", "rb") as f:
+        jira_tickets = pickle.load(f)
+
     tfidf_vectorizer = TfidfVectorizer()
     if min_df != 1:
         tfidf_vectorizer.min_df = min_df
     if max_df != 1:
         tfidf_vectorizer.max_df = max_df
-    start_time_2 = time.time()
+    # start_time_2 = time.time()
     # score_lines = Parallel(n_jobs=6)(delayed(calculate_similarity_scores)([record], jira_tickets, tfidf_vectorizer, using_code_terms_only) for record in records)
     score_lines = calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_code_terms_only)
-    finish_time = time.time()
-    print("My program took", finish_time - start_time, "to run")
-    print("My program2 took", finish_time - start_time_2, "to run")
+    # finish_time = time.time()
+    # print("My program took", finish_time - start_time, "to run")
+    # print("My program2 took", finish_time - start_time_2, "to run")
     utils.write_lines(score_lines, similarity_scores_file_path)
 
 if __name__ == '__main__':

@@ -106,3 +106,23 @@ Joint-model mean AUC-ROC: 0.9826569487112436
 Joint-model mean AUC-PR: 0.9533552543768178
 
 Use php to predict php not link-recovered (training data is 90% of all data, 10 repeating times)
+Processing fold number: 1
+Current processing weight set (0.5,0.5)
+Message F1: 0.9927745664739884
+Issue F1: 0.8410493827160493
+Patch F1: 0.9941944847605223
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.9927745664739884
+Log message mean recall: 0.9927745664739884
+Log message mean f1: 0.9927745664739884
+Issue mean precision: 0.902317880794702
+Issue mean recall: 0.7875722543352601
+Issue mean f1: 0.8410493827160493
+Patch mean precision: 0.9985422740524781
+Patch mean recall: 0.9898843930635838
+Patch mean f1: 0.9941944847605223
+Joint-model mean precision: 0.9927536231884058
+Joint-model mean recall: 0.9898843930635838
+Joint-model mean f1: 0.9913169319826337
+Joint-model mean AUC-ROC: 0.9991139079831276
+Joint-model mean AUC-PR: 0.9971017878673677

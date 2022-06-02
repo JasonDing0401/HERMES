@@ -6,3 +6,4 @@ MSR2019/experiment/
 model/
 prediction/
 sim_scores/
+issue_corpus_processed.txt
