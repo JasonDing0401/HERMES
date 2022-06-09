@@ -1,5 +1,11 @@
 # import argparse
 import os
+import json
+from github import Github
+from pydriller import Git
+import requests
+import sys
+import re
 import pickle
 from issue_linker import *
 from predict import *
@@ -7,6 +13,88 @@ from predict import *
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--name', type=str, required=True)
 # args = parser.parse_args()
+
+def collect_data(folder, commit_id):
+    if folder.endswith("/"):
+        folder = folder[:-1]
+
+    if not os.path.isdir(folder):
+        print(f"Error: could not find folder {folder}")
+        sys.exit(1)
+
+    if not os.path.isdir(f"{folder}/.git/"):
+        print(f"Error: {folder} does not contain a git repository")
+        sys.exit(1)
+
+    gh = Github("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")
+    #gh = Github("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")
+
+    git = Git(f"{folder}/.git/")
+    repo_name = git.repo.remotes[0].url.replace("https://github.com/", "").replace(".git", "")
+    if repo_name.endswith("/"):
+        repo_name = repo_name[:-1]
+    repo = gh.get_repo(repo_name)
+
+    commit = git.get_commit(commit_id)
+    data = {
+        "id": 0,
+        "repo": git.repo.remotes[0].url,
+        "commit_id": commit_id,
+        "commit_message": commit.msg,
+        "label": None,
+        "jira_ticket_list": [],
+        "github_issue_list": [],
+        "commit": {
+            "author_name": commit.committer.name,
+            "created_date": commit.committer_date.strftime("%a, %d %b %Y %H:%M:%S %z").strip(),
+            "files": [{
+                "file_name": file.old_path,
+                "patch": file.diff,
+                "status": file.change_type.name.lower(),
+                "additions": file.added_lines,
+                "deletions": file.deleted_lines,
+                "changes": file.added_lines + file.deleted_lines
+            } for file in commit.modified_files]
+        }
+    }
+
+    if "#" in data["commit_message"]:
+        pattern = r'\W(GH\-\d+|#\d+)'
+        issues = re.findall(pattern, data["commit_message"])
+
+        for potential_issue in issues:
+            try:
+                issue_num = int(potential_issue.replace("#", "").replace("GH-", ""))
+                r = requests.get(f"{git.repo.remotes[0].url}/issues/{issue_num}")
+                if r.status_code == 404:
+                    continue
+
+                issue = repo.get_issue(issue_num)
+
+                issue_data = {
+                    "title": issue.title,
+                    "body": issue.body,
+                    "author_name": issue.user.name,
+                    "created_at": issue.created_at.strftime("%a, %d %b %Y %H:%M:%S %z").strip(),
+                    "closed_at": issue.closed_at.strftime("%a, %d %b %Y %H:%M:%S %z").strip(),
+                    "closed_by": issue.closed_by.name,
+                    "last_modified": issue.last_modified,
+                    "comments": []
+                }
+
+                for comment in issue.get_comments():
+                    issue_data["comments"].append({
+                        "body": comment.body,
+                        "created_at": comment.created_at.strftime("%a, %d %b %Y %H:%M:%S %z").strip(),
+                        "created_by": comment.user.name,
+                        "last_modified": comment.last_modified
+                    })
+
+                data["github_issue_list"].append(issue_data)
+            except Exception as e:
+                print(f"note: {data['commit_id']} had a potential GitHub issue {potential_issue}, which failed to load.")
+                print(e)
+    return data
 
 # input: record -- single record with no issue linked
 # records -- [record] used in for loop
@@ -198,12 +286,23 @@ def predict_label(records, size=-1, ignore_number=True, github_issue=True, jira_
     return pred_list
 
 def main():
-    # format record
-    records = data_loader.load_records(os.path.join(directory, 'prediction/php/full_dataset_with_all_features.txt'))
-    for record in records:
-        assert record.label == None
-        # arbitrarily assign it to 0
-        record.label = 0
+    data = collect_data("../php/php-src", "e2c4fc57555b0598ab2cb5114ca06a5dab8a307e")
+    with open(os.path.join(directory, "test.txt"), "a") as f:
+        json.dumps(f, [data])
+    # format record, now just assume single record
+    records = data_loader.load_records(os.path.join(directory, 'test.txt'))
+    record = records[0]
+    assert record.label == None
+    # arbitrarily assign it to 0
+    record.label = 0
+    records = [record]
     # issue recover if not linked
+    if len(record.jira_ticket_list) == 0 and len(record.github_issue_list) == 0:
+        score_lines = process_linking(records)
+        records = write_dataset_with_enhanced_issue(records, score_lines)
     # predict label
-    pass
+    records_with_label = predict_label(records)
+    return records_with_label
+
+if __name__ == '__main__':
+    main()
