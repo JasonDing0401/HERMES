@@ -341,10 +341,19 @@ def link_similarity(record, ticket, corpus_id_to_tf_idf_score,
     return max_score
 
 
+# def calculate_corpus_document_score(tfidf_matrix, feature_names, corpus):
+#     id_to_score = {}
+#     for index in range(len(corpus)):
+#         id_to_score[index] = get_tfidf_for_words(tfidf_matrix, feature_names, index)
+
+#     return id_to_score
+
+# Paralleled version
 def calculate_corpus_document_score(tfidf_matrix, feature_names, corpus):
     id_to_score = {}
+    lst = Parallel(n_jobs=-1)(delayed(get_tfidf_for_words)(tfidf_matrix, feature_names, index) for index in range(len(corpus)))
     for index in range(len(corpus)):
-        id_to_score[index] = get_tfidf_for_words(tfidf_matrix, feature_names, index)
+        id_to_score[index] = lst[index]
 
     return id_to_score
 
@@ -503,54 +512,46 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
         if not using_code_terms_only:
             record.text_terms_parts = extract_commit_text_terms_parts(record)
 
-        # need_print = False
-        # for terms in record.text_terms_parts:
-        #     if len(terms) <= 10:
-        #         need_print = True
-
-        # if not need_print:
-        #     continue
-        # short_term_count += 1
-
     print("Finish extract commit features")
     # print(short_term_count)
 
     jira_tickets = []
-    if test_true_link:
-        # if merge with crawled corpus, ticket_id must be assign from "lasted" issues id + 1
-        if merge_link:
-            jira_tickets = load_jira_tickets(testing)
-            jira_tickets = jira_tickets[:30000]
-            current_count = len(jira_tickets)
-            for record in records:
-                ticket = record.jira_ticket_list[0]
-                current_count += 1
-                ticket.id = current_count
-                jira_tickets.append(ticket)
-        # else issue id count from 0
-        else:
-            current_count = 0
-            for record in records:
-                ticket = record.jira_ticket_list[0]
-                current_count += 1
-                ticket.id = current_count
-                jira_tickets.append(ticket)
-    else:
-        jira_tickets = load_jira_tickets(testing)
+    # It is already loaded once, so we don't need to do it again
+    # if test_true_link:
+    #     # if merge with crawled corpus, ticket_id must be assign from "lasted" issues id + 1
+    #     if merge_link:
+    #         jira_tickets = load_jira_tickets(testing)
+    #         jira_tickets = jira_tickets[:30000]
+    #         current_count = len(jira_tickets)
+    #         for record in records:
+    #             ticket = record.jira_ticket_list[0]
+    #             current_count += 1
+    #             ticket.id = current_count
+    #             jira_tickets.append(ticket)
+    #     # else issue id count from 0
+    #     else:
+    #         current_count = 0
+    #         for record in records:
+    #             ticket = record.jira_ticket_list[0]
+    #             current_count += 1
+    #             ticket.id = current_count
+    #             jira_tickets.append(ticket)
+    # else:
+    #     jira_tickets = load_jira_tickets(testing)
 
     # random.shuffle(jira_tickets)
-    print("Issues length: {}".format(len(jira_tickets)))
-    print("Start extracting issue features...")
-    for issue in jira_tickets:
-        issue.code_terms = extract_issue_code_terms(issue)
-        # issue.code_terms = ''
-        if not using_code_terms_only:
-            issue.text_terms_parts = extract_issue_text_terms_parts(issue, limit_feature)
+    # print("Issues length: {}".format(len(jira_tickets)))
+    # print("Start extracting issue features...")
+    # for issue in jira_tickets:
+    #     issue.code_terms = extract_issue_code_terms(issue)
+    #     # issue.code_terms = ''
+    #     if not using_code_terms_only:
+    #         issue.text_terms_parts = extract_issue_text_terms_parts(issue, limit_feature)
 
-    print("Finish extracting issue features")
+    # print("Finish extracting issue features")
 
-    with open("issue_corpus_processed.txt", "wb+") as f:
-        pickle.dump(jira_tickets, f)
+    # with open("issue_corpus_processed.txt", "wb+") as f:
+    #     pickle.dump(jira_tickets, f)
     
     with open("issue_corpus_processed.txt", "rb") as f:
         jira_tickets = pickle.load(f)
@@ -560,12 +561,12 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
         tfidf_vectorizer.min_df = min_df
     if max_df != 1:
         tfidf_vectorizer.max_df = max_df
-    # start_time_2 = time.time()
+    start_time_2 = time.time()
     # score_lines = Parallel(n_jobs=6)(delayed(calculate_similarity_scores)([record], jira_tickets, tfidf_vectorizer, using_code_terms_only) for record in records)
     score_lines = calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_code_terms_only)
-    # finish_time = time.time()
+    finish_time = time.time()
     # print("My program took", finish_time - start_time, "to run")
-    # print("My program2 took", finish_time - start_time_2, "to run")
+    print("My program2 took", finish_time - start_time_2, "to run")
     utils.write_lines(score_lines, similarity_scores_file_path)
 
 if __name__ == '__main__':

@@ -1,20 +1,23 @@
 # import argparse
 import os
-import json
-from github import Github
-from pydriller import Git
 import requests
 import sys
 import re
 import pickle
+import json
+import time
+import warnings
+from github import Github
+from pydriller import Git
 from issue_linker import *
 from predict import *
+from entities import EntityEncoder
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--name', type=str, required=True)
 # args = parser.parse_args()
 
-def collect_data(folder, commit_id):
+def collect_data(gh_pat, folder, commit_id):
     if folder.endswith("/"):
         folder = folder[:-1]
 
@@ -26,11 +29,11 @@ def collect_data(folder, commit_id):
         print(f"Error: {folder} does not contain a git repository")
         sys.exit(1)
 
-    gh = Github("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")
-    #gh = Github("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")
+    # Don't push it to github
+    gh = Github(gh_pat)
 
     git = Git(f"{folder}/.git/")
-    repo_name = git.repo.remotes[0].url.replace("https://github.com/", "").replace(".git", "")
+    repo_name = git.repo.remotes[0].url.replace("git@github.com:", "").replace(".git", "")
     if repo_name.endswith("/"):
         repo_name = repo_name[:-1]
     repo = gh.get_repo(repo_name)
@@ -94,7 +97,7 @@ def collect_data(folder, commit_id):
             except Exception as e:
                 print(f"note: {data['commit_id']} had a potential GitHub issue {potential_issue}, which failed to load.")
                 print(e)
-    return data
+    return [data]
 
 # input: record -- single record with no issue linked
 # records -- [record] used in for loop
@@ -121,7 +124,7 @@ def process_linking(records, testing=False, min_df=1, using_code_terms_only=Fals
     with open("issue_corpus_processed.txt", "rb") as f:
         jira_tickets = pickle.load(f)
 
-    tfidf_vectorizer = TfidfVectorizer()
+    tfidf_vectorizer = TfidfVectorizer(max_features=500)
     if min_df != 1:
         tfidf_vectorizer.min_df = min_df
     if max_df != 1:
@@ -169,6 +172,41 @@ def write_dataset_with_enhanced_issue(records, score_lines, limit=-1):
 
     return records
 
+def measure_joint_model_using_logistic_regression(ensemble_classifier, test_data, 
+                                                  log_message_test_predict_prob, id_to_issue_test_predict_prob,
+                                                  patch_test_predict_prob, options):
+    # issue_train_mean_probability = None
+    issue_test_mean_probability = None
+
+    if options.use_issue_classifier:
+        # issue_train_mean_probability = np.mean([prob for id, prob in id_to_issue_train_predict_prob.items()])
+        issue_test_mean_probability = np.mean([prob for id, prob in id_to_issue_test_predict_prob.items()])
+
+    y_test = retrieve_label(test_data)
+    X_test = []
+    for index in range(len(test_data)):
+        if options.use_issue_classifier:
+            if test_data[index].id in id_to_issue_test_predict_prob:
+                X_test.append(
+                    [log_message_test_predict_prob[index],
+                     id_to_issue_test_predict_prob[test_data[index].id],
+                     patch_test_predict_prob[index]])
+            else:
+                # TODO: This might be a bug in the original file
+                X_test.append(
+                    [log_message_test_predict_prob[index],
+                     issue_test_mean_probability,
+                     patch_test_predict_prob[index]])
+        else:
+            X_test.append([log_message_test_predict_prob[index], patch_test_predict_prob[index]])
+
+    # ensemble_classifier.fit(X=X_train, y=y_train)
+    y_pred = ensemble_classifier.predict(X=X_test)
+    # prob that the label is 1=vulnerability-related
+    y_prob = ensemble_classifier.predict_proba(X=X_test)[:, 1]
+
+    return y_pred, y_prob
+
 def predict_label(records, size=-1, ignore_number=True, github_issue=True, jira_ticket=True, use_comments=True, positive_weights=[0.5], 
                     n_gram=1, min_df=5, use_linked_commits_only=False, use_issue_classifier=True, fold_to_run=1, use_stacking_ensemble=True,
                     tf_idf_threshold=0.005, use_patch_context_lines=False):
@@ -185,6 +223,7 @@ def predict_label(records, size=-1, ignore_number=True, github_issue=True, jira_
                                                             use_patch_context_lines)
 
     print("loading vectorizer from model/")
+    # TODO: Haven't moved these pretrained stuff to model/php/ yet
     with open("./model/commit_message_vectorizer.joblib", "rb") as f:
         commit_message_vectorizer = load(f)
     with open("./model/issue_vectorizer.joblib", "rb") as f:
@@ -259,7 +298,7 @@ def predict_label(records, size=-1, ignore_number=True, github_issue=True, jira_
 
         if options.use_stacking_ensemble:
             ensemble_classifier = weight_to_joint_classifier[positive_weight]
-            y_pred, joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr, false_positive_joint_records, false_negative_joint_records, output_lines \
+            y_pred, y_prob \
                 = measure_joint_model_using_logistic_regression(ensemble_classifier,
                                                                 test_data=test_data,
                                                                 log_message_test_predict_prob=log_message_test_predict_prob,
@@ -267,30 +306,20 @@ def predict_label(records, size=-1, ignore_number=True, github_issue=True, jira_
                                                                 patch_test_predict_prob=patch_test_predict_prob,
                                                                 options=options)
         else:
-            y_pred, joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr \
-                = measure_joint_model(log_message_prediction, issue_prediction,
-                                        patch_prediction, log_message_test_predict_prob, patch_test_predict_prob, retrieve_label(test_data), options)
+            raise Exception("Should use joint classifier")
 
     # Write data and label to file
-    pred_list = []
-    assert len(test_data) == len(y_pred)
-    with open(file_path, "r") as f:
-        pred_list = json.load(f)
-    assert len(test_data) == len(pred_list)
-    for i in range(len(test_data)):
-        data = pred_list[i]
-        assert data['id'] == test_data[i].id
-        data['label'] = int(y_pred[i])
-        pred_list[i] = data
+    print("probability that it is vulnerability-related is:", y_prob[0])
 
-    return pred_list
+    return int(y_pred[0])
 
 def main():
-    data = collect_data("../php/php-src", "e2c4fc57555b0598ab2cb5114ca06a5dab8a307e")
-    with open(os.path.join(directory, "test.txt"), "a") as f:
-        json.dumps(f, [data])
+    # format: [{...}] single record
+    data = collect_data("YOUR OWN GITHUB PAT", "../php-src", "e2c4fc57555b0598ab2cb5114ca06a5dab8a307e")
+    with open(os.path.join(directory, "tmp.txt"), "w") as f:
+        f.write(json.dumps(data))
     # format record, now just assume single record
-    records = data_loader.load_records(os.path.join(directory, 'test.txt'))
+    records = data_loader.load_records(os.path.join(directory, 'tmp.txt'))
     record = records[0]
     assert record.label == None
     # arbitrarily assign it to 0
@@ -299,10 +328,29 @@ def main():
     # issue recover if not linked
     if len(record.jira_ticket_list) == 0 and len(record.github_issue_list) == 0:
         score_lines = process_linking(records)
+        print(score_lines)
         records = write_dataset_with_enhanced_issue(records, score_lines)
+    entity_encoder = EntityEncoder()
+    records_with_issue = entity_encoder.encode(records)
+    with open(os.path.join(directory, "tmp.txt"), "w") as f:
+        f.write(records_with_issue)
     # predict label
-    records_with_label = predict_label(records)
-    return records_with_label
+    label = predict_label(records)
+    print("predicted label is:", label)
+    record = records[0]
+    record.label = label
+    records = [record]
+    json_value = entity_encoder.encode(records)
+    with open(os.path.join(directory, "prediction.txt"), "w") as f:
+        f.write(json_value)
+    return records
 
 if __name__ == '__main__':
-    main()
+    warnings.simplefilter("ignore")
+    start_time = time.time()
+    records = main()
+    end_time = time.time()
+    print("time spent is:", end_time-start_time)
+    record = records[0]
+    print(record)
+    print("label is:", record.label)

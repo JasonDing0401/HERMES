@@ -309,6 +309,7 @@ def measure_joint_model_using_logistic_regression(ensemble_classifier, test_data
 
     # ensemble_classifier.fit(X=X_train, y=y_train)
     y_pred = ensemble_classifier.predict(X=X_test)
+    # prob that the label is 1=vulnerability-related
     y_prob = ensemble_classifier.predict_proba(X=X_test)[:, 1]
     joint_precision = metrics.precision_score(y_pred=y_pred, y_true=y_test)
     joint_recall = metrics.recall_score(y_pred=y_pred, y_true=y_test)
