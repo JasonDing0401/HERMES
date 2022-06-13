@@ -135,7 +135,8 @@ def process_linking(records, testing=False, min_df=1, using_code_terms_only=Fals
 
 # sim_scores_file = score_lines
 def write_dataset_with_enhanced_issue(records, score_lines, limit=-1):
-    jira_tickets = load_jira_tickets(testing=False)
+    with open("issue_corpus_processed.txt", "rb") as f:
+        jira_tickets = pickle.load(f)
 
     id_to_record = {}
     for record in records:
@@ -293,9 +294,6 @@ def predict_label(records, size=-1, ignore_number=True, github_issue=True, jira_
         patch_classifier, precision, recall, f1, patch_prediction, patch_test_predict_prob, false_positives, false_negatives\
             = patch_classify(patch_classifier, patch_x_test, patch_y_test)
 
-        # calculate precision, recall for joint-model
-        joint_precision, joint_recall, joint_f1 = None, None, None
-
         if options.use_stacking_ensemble:
             ensemble_classifier = weight_to_joint_classifier[positive_weight]
             y_pred, y_prob \
@@ -315,7 +313,7 @@ def predict_label(records, size=-1, ignore_number=True, github_issue=True, jira_
 
 def main():
     # format: [{...}] single record
-    data = collect_data("YOUR OWN GITHUB PAT", "../php-src", "e2c4fc57555b0598ab2cb5114ca06a5dab8a307e")
+    
     with open(os.path.join(directory, "tmp.txt"), "w") as f:
         f.write(json.dumps(data))
     # format record, now just assume single record
@@ -346,6 +344,9 @@ def main():
     return records
 
 if __name__ == '__main__':
+    # TODO: Improvements:
+    # 1. store ticket_id_to_corpus_id and corpus; 
+    # 2. set threshold of similarity score and assign a above 0.5 one instead of the highest
     warnings.simplefilter("ignore")
     start_time = time.time()
     records = main()

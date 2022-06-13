@@ -431,7 +431,7 @@ def analyze_dataset():
 #                                   drop_empty=True)
 # score_threshold: how much unlinked issue will be recovered
 write_dataset_with_enhanced_issue(sim_scores_file_name='texts.txt',
-                                  enhanced_data_file_name='enhanced_dataset_th_100.txt',
+                                  enhanced_data_file_name='enhanced_dataset_max-features-500.txt',
                                   score_threshold=1,
                                   limit=-1,
                                   drop_empty=True)

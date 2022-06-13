@@ -10,17 +10,13 @@ from nltk.corpus import stopwords
 import data_preprocessor
 import utils
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 import math
 import click
 import random
 from joblib import Parallel, delayed
-from joblib import dump, load
 from functools import partial
 import time
 import pickle
-import numpy as np
-from scipy.sparse import csr_matrix, save_npz, load_npz
 
 stemmer = PorterStemmer()
 stopwords_set = set(stopwords.words('english'))
@@ -366,47 +362,42 @@ def calculate_corpus_document_score(tfidf_matrix, feature_names, corpus):
 
 def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_code_terms_only):
     corpus = []
-    
-    # corpus_index = -1
-    # ticket_code_corpus_id = []
-    # for ticket in jira_tickets:
-    #     corpus_index += 1
-    #     ticket_code_corpus_id.append(corpus_index)
-    #     corpus.append(ticket.code_terms)
+    corpus_index = -1
 
-    #     if not using_code_terms_only:
-    #         for text_terms in ticket.text_terms_parts:
-    #             corpus_index += 1
-    #             corpus.append(text_terms)
-    
+    record_id_to_corpus_id = {}
     for record in records:
+        corpus_index += 1
+        record_id_to_corpus_id[record.id] = [corpus_index]
         corpus.append(record.code_terms)
+
         if not using_code_terms_only:
             for text_terms in record.text_terms_parts:
+                corpus_index += 1
+                record_id_to_corpus_id[record.id].append(corpus_index)
+                corpus.append(text_terms)
+
+    ticket_id_to_corpus_id = {}
+    for ticket in jira_tickets:
+        corpus_index += 1
+        ticket_id_to_corpus_id[ticket.id] = [corpus_index]
+        corpus.append(ticket.code_terms)
+
+        if not using_code_terms_only:
+            for text_terms in ticket.text_terms_parts:
+                corpus_index += 1
+                ticket_id_to_corpus_id[ticket.id].append(corpus_index)
                 corpus.append(text_terms)
 
     print("Calculating TF-IDF vectorizer...")
     # TODO: fit_transform tickets first, then transform a record (append to the matrix)
-    # with open("ticket_code_ind.npy", "wb+") as f:
-    #     np.save(f, np.array(ticket_code_corpus_id))
-    # tfidf_vectorizer = tfidf_vectorizer.fit(corpus)
-    # tfidf_matrix = tfidf_vectorizer.transform(corpus)
-    # with open("tfidf_vectorizer.joblib", "wb+") as f:
-    #     dump(tfidf_vectorizer, f)
-    # with open("tfidf_mat.npz", "wb+") as f:
-    #     save_npz(f, tfidf_matrix)
-    with open("ticket_code_ind.npy", "rb") as f:
-        ticket_code_corpus_id = np.load(f, allow_pickle=True)
-    with open("tfidf_mat.npz", "rb") as f:
-        tfidf_matrix = load_npz(f)
-    with open("tfidf_vectorizer.joblib", "rb") as f:
-        tfidf_vectorizer = load(f)
-    record_matrix = tfidf_vectorizer.transform(corpus)
+    tfidf_matrix = tfidf_vectorizer.fit_transform(corpus)
+    feature_names = tfidf_vectorizer.get_feature_names()
     print("Finish calculating TF-IDF vectorizer")
-    print("Vectorizer shape is", tfidf_matrix.shape, type(tfidf_matrix))    # (2148395, 500)
-    # print("Start calculating TF-IDF score for every words in every document in corpus...")
-    # corpus_id_to_tfidf_score = calculate_corpus_document_score(tfidf_matrix, feature_names, corpus)
-    # print("Finish calculating TF-IDF score")
+    print("Vectorizer shape is", tfidf_matrix.shape)
+
+    print("Start calculating TF-IDF score for every words in every document in corpus...")
+    corpus_id_to_tfidf_score = calculate_corpus_document_score(tfidf_matrix, feature_names, corpus)
+    print("Finish calculating TF-IDF score")
 
     score_lines = []
     record_count = 0
@@ -414,17 +405,21 @@ def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_c
         if use_relevant_ticket and record.repo not in repo_to_key:
             continue
         record_count += 1
-        max_score = 0.0
-        best_ticket = None
-        
-        score_matrix = cosine_similarity(record_matrix, tfidf_matrix, dense_output=False)
-        # print(score_matrix.shape, type(score_matrix))
-        max_score = csr_matrix.max(score_matrix)
-        if max_score != 0.0:
-            max_ind = csr_matrix.argmax(score_matrix) % 2148395
-            ticket_ind = np.where(ticket_code_corpus_id <= max_ind)[0][-1]
-            best_ticket = jira_tickets[ticket_ind]
 
+        # if record.commit_id != '4dd6206547de8f694532579e37ba8103bafaeb1':
+        #     continue
+
+        max_score = 0
+        best_ticket = None
+        # TODO: can either parallelize this loop or set max_score to a threshold score instead
+        for ticket in jira_tickets:
+            if use_relevant_ticket and not ticket.name.startswith(repo_to_key[record.repo]):
+                continue
+            current_score = link_similarity(record, ticket, corpus_id_to_tfidf_score,
+                                            record_id_to_corpus_id, ticket_id_to_corpus_id)
+            if current_score > max_score:
+                max_score = current_score
+                best_ticket = ticket
         if best_ticket is not None:
             score_lines.append(str(record.id) + '\t\t' + record.repo + '/commit/' + record.commit_id + '\t\t'
                                + str(best_ticket.id)

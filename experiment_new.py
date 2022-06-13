@@ -427,9 +427,9 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                   tf_idf_threshold, use_patch_context_lines, run_fold):
 
     global file_path
-    if dataset != '':
-        file_path = 'MSR2019/experiment/' + dataset
-
+    # if dataset != '':
+    #     file_path = 'MSR2019/experiment/' + dataset
+    file_path = 'enhanced_dataset_max-features-500.txt'
     print("Dataset: {}".format(file_path))
 
     options = feature_options.read_option_from_command_line(size, 0, ignore_number,
@@ -662,22 +662,6 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
             weight_to_joint_f1s[positive_weight].append(joint_f1)
             weight_to_joint_auc_roc[positive_weight].append(joint_auc_roc)
             weight_to_joint_auc_pr[positive_weight].append(joint_auc_pr)
-
-    print_line_seperator()
-
-    for positive_weight in positive_weights:
-        print("saving model to model/ with pos weight {}".format(positive_weight))
-        with open('./model/log_classifier_weight-{}.joblib'.format(positive_weight), "wb+") as f:
-            dump(weight_to_log_classifier[positive_weight], f)
-        if options.use_issue_classifier:
-            with open('./model/issue_classifier_weight-{}.joblib'.format(positive_weight), "wb+") as f:
-                dump(weight_to_issue_classifier[positive_weight], f)
-        with open('./model/patch_classifier_weight-{}.joblib'.format(positive_weight), "wb+") as f:
-            dump(weight_to_patch_classifier[positive_weight], f)
-        if options.use_stacking_ensemble:
-            with open('./model/joint_classifier_weight-{}.joblib'.format(positive_weight), "wb+") as f:
-                dump(weight_to_joint_classifier[positive_weight], f)
-        print("done")
 
     print_line_seperator()
 
