@@ -386,7 +386,7 @@ def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_c
                 corpus.append(text_terms)
 
     print("Calculating TF-IDF vectorizer...")
-    # TODO: fit_transform tickets first, then transform a record (append to the matrix)
+    # fit_transform tickets first, then transform a record (append to the matrix)
     # with open("ticket_code_ind.npy", "wb+") as f:
     #     np.save(f, np.array(ticket_code_corpus_id))
     # tfidf_vectorizer = tfidf_vectorizer.fit(corpus)
@@ -403,7 +403,7 @@ def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_c
         tfidf_vectorizer = load(f)
     record_matrix = tfidf_vectorizer.transform(corpus)
     print("Finish calculating TF-IDF vectorizer")
-    print("Vectorizer shape is", tfidf_matrix.shape, type(tfidf_matrix))    # (2148395, 500)
+    # print("Vectorizer shape is", tfidf_matrix.shape, type(tfidf_matrix))    # (2148395, 500) (403483, 500)
     # print("Start calculating TF-IDF score for every words in every document in corpus...")
     # corpus_id_to_tfidf_score = calculate_corpus_document_score(tfidf_matrix, feature_names, corpus)
     # print("Finish calculating TF-IDF score")
@@ -421,18 +421,18 @@ def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_c
         # print(score_matrix.shape, type(score_matrix))
         max_score = csr_matrix.max(score_matrix)
         if max_score != 0.0:
-            max_ind = csr_matrix.argmax(score_matrix) % 2148395
+            max_ind = csr_matrix.argmax(score_matrix) % 403483
             ticket_ind = np.where(ticket_code_corpus_id <= max_ind)[0][-1]
             best_ticket = jira_tickets[ticket_ind]
 
         if best_ticket is not None:
             score_lines.append(str(record.id) + '\t\t' + record.repo + '/commit/' + record.commit_id + '\t\t'
                                + str(best_ticket.id)
-                               + '\t\t' + str(max_score) + '\t\t' + best_ticket.name)
+                               + '\t\t' + str(max_score))
         else:
             score_lines.append(
                 str(record.id) + '\t\t' + record.repo + '/commit/' + record.commit_id + '\t\t' + 'None'
-                + '\t\t' + '0' + '\t\t' + 'None')
+                + '\t\t' + '0')
 
         if record_count % 50 == 0:
             print("Finished {} records".format(record_count))
@@ -488,7 +488,7 @@ def process_linking(testing, min_df, using_code_terms_only, limit_feature, text_
     print_line_seperator()
 
     # records = data_loader.load_records(os.path.join(directory, 'MSR2019/experiment/full_dataset_with_all_features.txt'))
-    records = data_loader.load_records(os.path.join(directory, 'prediction/php/full_dataset_with_all_features.txt'))
+    records = data_loader.load_records(os.path.join(directory, 'prediction/v8/full_dataset_with_all_features.txt'))
     print("original length of records", len(records))
 
     new_records = []

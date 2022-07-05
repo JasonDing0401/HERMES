@@ -6,4 +6,6 @@ MSR2019/experiment/
 model/
 prediction/
 sim_scores/
-issue_corpus_processed.txt
+jira_issue_corpus/
+issue_corpus_new/
+github_issue_corpus_processed.txt
