@@ -89,7 +89,7 @@ def process_linking(records, testing=False, min_df=1, using_code_terms_only=Fals
     return score_lines
 
 # sim_scores_file = score_lines
-def write_dataset_with_enhanced_issue(records, score_lines, limit=-1):
+def write_dataset_with_enhanced_issue(records, score_lines, thresh=0.5, limit=-1):
     with open("github_issue_corpus_processed.txt", "rb") as f:
         github_issues = pickle.load(f)
 
@@ -106,7 +106,7 @@ def write_dataset_with_enhanced_issue(records, score_lines, limit=-1):
         ticket_id = int(parts[2])
         score = float(parts[3])
         # ticket_key = parts[4]
-        if score > 0:
+        if score >= thresh:
             scores.append((record_id, ticket_id, score))
 
     print("Sorting scores...")
@@ -129,7 +129,7 @@ def write_dataset_with_enhanced_issue(records, score_lines, limit=-1):
     return records
 
 def main():
-    records = data_loader.load_records(os.path.join(directory, 'tmp.txt'))
+    records = data_loader.load_records(os.path.join(directory, 'prediction/v8/full_dataset_with_all_features.txt'))
     records_linked = []
     for record in records:
         if len(record.jira_ticket_list) == 0 and len(record.github_issue_list) == 0:
@@ -139,7 +139,7 @@ def main():
         records_linked.append(record)
     entity_encoder = EntityEncoder()
     records_with_issue = entity_encoder.encode(records_linked)
-    with open(os.path.join(directory, "tmp.txt"), "w") as f:
+    with open(os.path.join(directory, "prediction/v8/enhanced_dataset_with_issues.txt"), "w+") as f:
         f.write(records_with_issue)
 
 if __name__ == '__main__':
