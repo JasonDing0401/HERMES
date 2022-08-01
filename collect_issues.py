@@ -17,6 +17,7 @@ def collect_issue(gh_pat, repo_name):
 
     print("length of issues:", total_issues.totalCount)
     cnt = 0
+    num = 0
     for issue in total_issues:
         try:
             cnt += 1
@@ -40,9 +41,14 @@ def collect_issue(gh_pat, repo_name):
             issue_list.append(issue_data)
             if cnt % 50 == 0:
                 print("Already collected:", cnt)
-            if cnt > 10000:
-                print("Number of issues exceeds 10000. Will collect the next repo.")
-                break
+            if cnt % 10000 == 0:
+                print("Number of issues exceeds " + str(cnt) + ". Will store in separate files.")
+                num = cnt // 10000
+                with open("issue_corpus_new/" + repo_name + "_issue_corpus_" + str(num) + ".txt", "w+") as f:
+                    f.write(json.dumps(issue_list))
+                with open("github_issue_corpus_names.txt", "a") as f:
+                    f.write(repo_name + "_issue_corpus_" + str(num) + ".txt\n")
+                issue_list = []
         except AttributeError:
             continue
         except RateLimitExceededException:
@@ -58,16 +64,24 @@ def collect_issue(gh_pat, repo_name):
                 time.sleep(seconds)
                 print("Done waiting - resume!")
     
-    with open("issue_corpus_new/" + repo_name + "_issue_corpus.txt", "w+") as f:
-        f.write(json.dumps(issue_list))
-    
-    with open("github_issue_corpus_names.txt", "a") as f:
-        f.write(repo_name + "_issue_corpus.txt\n")
+    if num == 0:
+        with open("issue_corpus_new/" + repo_name + "_issue_corpus.txt", "w+") as f:
+            f.write(json.dumps(issue_list))
+        with open("github_issue_corpus_names.txt", "a") as f:
+            f.write(repo_name + "_issue_corpus.txt\n")
+    else:
+        if issue_list:
+            num += 1
+            with open("issue_corpus_new/" + repo_name + "_issue_corpus_" + str(num) + ".txt", "w+") as f:
+                f.write(json.dumps(issue_list))
+            with open("github_issue_corpus_names.txt", "a") as f:
+                f.write(repo_name + "_issue_corpus_" + str(num) + ".txt\n")
+
 
 if __name__ == '__main__':
-    # repo_list = ["php/php-src", "redis/redis", "v8/v8", "ImageMagick/ImageMagick", "openssl/openssl"]
-    # repos = ["tensorflow/tensorflow", "electron/electron", "bitcoin/bitcoin", "opencv/opencv", "apple/swift", "netdata/netdata", "pytorch/pytorch", "protocolbuffers/protobuf"]
+    # ["php/php-src", "redis/redis", "v8/v8", "ImageMagick/ImageMagick", "openssl/openssl"]
+    # ["tensorflow/tensorflow", "electron/electron", "bitcoin/bitcoin", "opencv/opencv", "apple/swift", "netdata/netdata", "pytorch/pytorch", "protocolbuffers/protobuf"]
     # ["godotengine/godot", "tesseract-ocr/tesseract", "git/git", "ocornut/imgui", "obsproject/obs-studio", "grpc/grpc", "FFmpeg/FFmpeg"]
     # ["topjohnwu/Magisk", "aria2/aria2", "curl/curl", "rethinkdb/rethinkdb", "tmux/tmux", "ClickHouse/ClickHouse", "dmlc/xgboost", "facebook/rocksdb"]
     # ["emscripten-core/emscripten", "facebook/folly", "mongodb/mongo", "ApolloAuto/apollo", "yuzu-emu/yuzu", "SerenityOS/serenity"]
-    collect_issue("123", "mongodb/mongo")
+    collect_issue("123", "php/php-src")
