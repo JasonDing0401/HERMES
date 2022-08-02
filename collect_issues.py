@@ -73,7 +73,7 @@ def collect_issue(gh_pat, repo_name):
                             "last_modified": comment.last_modified
                         })
                 except AttributeError:
-                    continue
+                    break
 
                 for event in issue.get_events():
                     try:
@@ -128,5 +128,4 @@ if __name__ == '__main__':
     # ["godotengine/godot", "tesseract-ocr/tesseract", "git/git", "ocornut/imgui", "obsproject/obs-studio", "grpc/grpc", "FFmpeg/FFmpeg"]
     # ["topjohnwu/Magisk", "aria2/aria2", "curl/curl", "rethinkdb/rethinkdb", "tmux/tmux", "ClickHouse/ClickHouse", "dmlc/xgboost", "facebook/rocksdb"]
     # ["emscripten-core/emscripten", "facebook/folly", "mongodb/mongo", "ApolloAuto/apollo", "yuzu-emu/yuzu", "SerenityOS/serenity"]
-    for repo in ["redis/redis", "ImageMagick/ImageMagick"]:
-        collect_issue("abc", repo)
+    collect_issue("", "php/php-src")
