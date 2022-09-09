@@ -419,7 +419,7 @@ def retrieve_top_features(classifier, vectorizer):
 @click.option('--use_issue_classifier', default=True, type=bool)
 @click.option('--fold_to_run', default=10, type=int) # Not used
 @click.option('--use_stacking_ensemble', default=True, type=bool)
-@click.option('--dataset', default='php_enhanced_dataset_th_100.txt', type=str)
+@click.option('--dataset', default='image/image_enhanced_dataset_th_100.txt', type=str)
 @click.option('--tf-idf-threshold', default=-1, type=float)
 @click.option('--use-patch-context-lines', default=False, type=bool)
 @click.option('--run-fold', default=-1, type=int) # Not used
@@ -429,7 +429,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     # python predict.py --min_df 5 --use_linked_commits_only False --use_issue_classifier True 
     # --use_stacking_ensemble True --use-patch-context-lines False --tf-idf-threshold 0.005
     global file_path
-    file_path = 'prediction/php/' + dataset
+    file_path = 'prediction/' + dataset
 
     print("Dataset: {}".format(file_path))
 
@@ -458,10 +458,10 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     # log: X has 2780 features, but SVC is expecting 6592 features as input.
     # issue: X has 10517 features, but SVC is expecting 7742 features as input.
     # patch: X has 12648 features, but SVC is expecting 29593 features as input.
-    commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram))
-    issue_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram),
-                                       min_df=options.min_document_frequency)
-    patch_vectorizer = CountVectorizer()
+    # commit_message_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram))
+    # issue_vectorizer = CountVectorizer(ngram_range=(1, options.max_n_gram),
+    #                                    min_df=options.min_document_frequency)
+    # patch_vectorizer = CountVectorizer()
     positive_weights = options.positive_weights
     records = data_loader.load_records(file_path)
     # records = preprocess_data(records, options)
@@ -590,8 +590,8 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     # with open("result.txt", "a") as f:
     #     f.write("Processing fold number: {}\n".format(fold_count))
     # print("Processing fold number: {}".format(fold_count))
-    calculate_vocabulary(records, list(range(len(records))), commit_message_vectorizer,
-                         issue_vectorizer, patch_vectorizer, options)
+    # calculate_vocabulary(records, list(range(len(records))), commit_message_vectorizer,
+    #                      issue_vectorizer, patch_vectorizer, options)
 
     # train_data, test_data = retrieve_data(records, train_data_indices, test_data_indices)
     test_data = records
@@ -718,7 +718,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     #     dic['commit'] = data.commit
     #     pred_list.append(dic)
 
-    prediction_path = os.path.join(directory, "classifier_output/" + "prediction" +\
+    prediction_path = os.path.join(directory, "classifier_output/prediction/" + dataset.split("/")[0] +\
         "_" + str(date) + "_" + str(time) + ".json")
     
     with open(prediction_path, "w+") as f:

@@ -363,7 +363,6 @@ def calculate_corpus_document_score(tfidf_matrix, feature_names, corpus):
 
     return id_to_score
 
-
 def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_code_terms_only):
     corpus = []
     
@@ -421,7 +420,7 @@ def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_c
         # print(score_matrix.shape, type(score_matrix))
         max_score = csr_matrix.max(score_matrix)
         if max_score != 0.0:
-            max_ind = csr_matrix.argmax(score_matrix) % 403483
+            max_ind = csr_matrix.argmax(score_matrix) % tfidf_matrix.shape[0]
             ticket_ind = np.where(ticket_code_corpus_id <= max_ind)[0][-1]
             best_ticket = jira_tickets[ticket_ind]
 
@@ -439,7 +438,6 @@ def calculate_similarity_scores(records, jira_tickets, tfidf_vectorizer, using_c
 
     # utils.write_lines(score_lines, similarity_scores_file_path)
     return score_lines
-
 
 @click.command()
 @click.option('--testing', default=False, type=bool)

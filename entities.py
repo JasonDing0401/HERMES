@@ -192,7 +192,7 @@ class JiraTicketComment:
 class GithubIssue():
     def __init__(self, json_value=None, title=None, body=None,
                  author_name=None, created_at=None, closed_at=None, closed_by=None,
-                 last_modified=None, comments=None):
+                 last_modified=None, comments=None, linked_commits=None, labels=None):
         if json_value is not None:
             self.__dict__.update(json.loads(json_value))
             comment_dict_list = self.comments
@@ -209,6 +209,8 @@ class GithubIssue():
             self.closed_by = closed_by
             self.last_modified = last_modified
             self.comments = comments
+            self.linked_commits = linked_commits
+            self.labels = labels
 
     def __repr__(self):
         return "Github issue: " + self.title + ", created at " + self.created_at

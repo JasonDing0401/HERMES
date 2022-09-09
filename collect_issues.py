@@ -48,7 +48,7 @@ def collect_issue(gh_pat, repo_name):
     print("length of issues:", total_count)
     repo_name = repo_name.replace("/", "-")
 
-    for cnt in range(total_count):
+    for cnt in range(5000, total_count):
         while True:
             try:
                 issue = total_issues[cnt]
@@ -96,9 +96,9 @@ def collect_issue(gh_pat, repo_name):
                 
                 if (cnt+1) % 50 == 0:
                     print("Already collected:", (cnt+1))
-                if (cnt+1) % 10000 == 0:
+                if (cnt+1) % 5000 == 0:
                     print("Number of issues exceeds " + str((cnt+1)) + ". Will store in separate files.")
-                    num = (cnt+1) // 10000
+                    num = (cnt+1) // 5000
                     with open("issue_corpus_new/" + repo_name + "_issue_corpus_" + str(num) + ".txt", "w+") as f:
                         f.write(json.dumps(issue_list))
                     with open("github_issue_corpus_names.txt", "a") as f:
@@ -128,4 +128,7 @@ if __name__ == '__main__':
     # ["godotengine/godot", "tesseract-ocr/tesseract", "git/git", "ocornut/imgui", "obsproject/obs-studio", "grpc/grpc", "FFmpeg/FFmpeg"]
     # ["topjohnwu/Magisk", "aria2/aria2", "curl/curl", "rethinkdb/rethinkdb", "tmux/tmux", "ClickHouse/ClickHouse", "dmlc/xgboost", "facebook/rocksdb"]
     # ["emscripten-core/emscripten", "facebook/folly", "mongodb/mongo", "ApolloAuto/apollo", "yuzu-emu/yuzu", "SerenityOS/serenity"]
-    collect_issue("", "php/php-src")
+    # ["apache/incubator-mxnet", "envoyproxy/envoy", "libuv/libuv", "taichi-dev/taichi", "telegramdesktop/tdesktop"]
+    # ["mpv-player/mpv", "fish-shell/fish-shell", "osquery/osquery", "taosdata/TDengine"]
+    for repo in ["mpv-player/mpv", "fish-shell/fish-shell", "osquery/osquery", "taosdata/TDengine"]:
+        collect_issue("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", repo)

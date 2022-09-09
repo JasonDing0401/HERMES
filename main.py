@@ -12,11 +12,12 @@ from pydriller import Git
 from issue_linker import *
 from predict import *
 from entities import EntityEncoder
+from ratelimit import limits
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--name', type=str, required=True)
 # args = parser.parse_args()
-
+@limits(calls=5000, period=3600)
 def collect_data(gh_pat, folder, commit_id):
     if folder.endswith("/"):
         folder = folder[:-1]
@@ -313,9 +314,10 @@ def predict_label(records, size=-1, ignore_number=True, github_issue=True, jira_
 
 def main():
     # format: [{...}] single record
-    
-    with open(os.path.join(directory, "tmp.txt"), "w") as f:
-        f.write(json.dumps(data))
+    # "ghp_" "Gcdv7Cebm" "m6K3Wt5Dz" "AwyZNnrxt" "RBy04j8tz"
+    # data = collect_data("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", "../php-src", "2119ba215aacf0b3964694a34aa39037e032abf6")
+    # with open(os.path.join(directory, "tmp.txt"), "w") as f:
+    #     f.write(json.dumps(data))
     # format record, now just assume single record
     records = data_loader.load_records(os.path.join(directory, 'tmp.txt'))
     record = records[0]

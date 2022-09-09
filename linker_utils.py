@@ -4,11 +4,12 @@ import issue_linker
 from entities import EntityEncoder
 import utils
 from utils import print_line_seperator
+import pickle
 
 
 def write_dataset_with_enhanced_issue(sim_scores_file_name, enhanced_data_file_name, score_threshold, limit, drop_empty):
     directory = os.path.dirname(os.path.abspath(__file__))
-    record_file_path = os.path.join(directory, "MSR2019/experiment/php_full_dataset_with_all_features.txt")
+    record_file_path = os.path.join(directory, "prediction/redis/full_dataset_with_all_features.txt")
     record_with_enhanced_issue_file_path \
         = os.path.join(directory, enhanced_data_file_name)
 
@@ -16,7 +17,8 @@ def write_dataset_with_enhanced_issue(sim_scores_file_name, enhanced_data_file_n
 
     records = data_loader.load_records(record_file_path)
 
-    jira_tickets = issue_linker.load_jira_tickets(testing=False)
+    with open("issue_corpus_processed.txt", "rb") as f:
+        jira_tickets = pickle.load(f)
 
     id_to_record = {}
     for record in records:
@@ -430,8 +432,8 @@ def analyze_dataset():
 #                                   limit=-1,
 #                                   drop_empty=True)
 # score_threshold: how much unlinked issue will be recovered
-write_dataset_with_enhanced_issue(sim_scores_file_name='texts.txt',
-                                  enhanced_data_file_name='enhanced_dataset_max-features-500.txt',
+write_dataset_with_enhanced_issue(sim_scores_file_name='sim_scores/redis_sim_scores.txt',
+                                  enhanced_data_file_name='prediction/redis/redis_enhanced_dataset_th_100.txt',
                                   score_threshold=1,
                                   limit=-1,
                                   drop_empty=True)

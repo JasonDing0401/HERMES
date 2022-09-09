@@ -1,2 +1,0 @@
-0		https://github.com/php/php-src/commit/771dbdb319fa7f90584f6b2cc2c54ccff570492d		54881		0.6866951364377637		THRIFT-5318
-1		https://github.com/php/php-src/commit/82f1bf1b6bc3a43aba62214870e6d0931e93a6d9		105784		0.5827061324092725		THRIFT-3984

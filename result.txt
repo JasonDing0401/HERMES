@@ -126,3 +126,356 @@ Joint-model mean recall: 0.9898843930635838
 Joint-model mean f1: 0.9913169319826337
 Joint-model mean AUC-ROC: 0.9991139079831276
 Joint-model mean AUC-PR: 0.9971017878673677
+
+php entire dataset with link_recovery max-features=500
+Processing fold number: 1
+Current processing weight set (0.5,0.5)
+Message F1: 0.9640287769784172
+Issue F1: 0.6620689655172415
+Patch F1: 0.7972972972972973
+Processing fold number: 2
+Current processing weight set (0.5,0.5)
+Message F1: 0.9251700680272108
+Issue F1: 0.5984251968503936
+Patch F1: 0.7586206896551724
+Processing fold number: 3
+Current processing weight set (0.5,0.5)
+Message F1: 0.9710144927536232
+Issue F1: 0.6122448979591837
+Patch F1: 0.684931506849315
+Processing fold number: 4
+Current processing weight set (0.5,0.5)
+Message F1: 0.9473684210526316
+Issue F1: 0.6493506493506495
+Patch F1: 0.7671232876712328
+Processing fold number: 5
+Current processing weight set (0.5,0.5)
+Message F1: 0.9672131147540983
+Issue F1: 0.7246376811594203
+Patch F1: 0.8503937007874016
+Processing fold number: 6
+Current processing weight set (0.5,0.5)
+Message F1: 0.9659863945578231
+Issue F1: 0.7239263803680981
+Patch F1: 0.7432432432432433
+Processing fold number: 7
+Current processing weight set (0.5,0.5)
+Message F1: 0.9523809523809523
+Issue F1: 0.562962962962963
+Patch F1: 0.7401574803149606
+Processing fold number: 8
+Current processing weight set (0.5,0.5)
+Message F1: 0.9577464788732395
+Issue F1: 0.6586826347305389
+Patch F1: 0.7682119205298014
+Processing fold number: 9
+Current processing weight set (0.5,0.5)
+Message F1: 0.9710144927536232
+Issue F1: 0.7012987012987013
+Patch F1: 0.8322147651006713
+Processing fold number: 10
+Current processing weight set (0.5,0.5)
+Message F1: 0.8993288590604026
+Issue F1: 0.6875
+Patch F1: 0.7808219178082192
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.9544162798937267
+Log message mean recall: 0.9503436972193315
+Log message mean f1: 0.9521252051192022
+Issue mean precision: 0.6191865991563835
+Issue mean recall: 0.7119989861430587
+Issue mean f1: 0.658109807019719
+Patch mean precision: 0.7475846195594621
+Patch mean recall: 0.8010967948734408
+Patch mean f1: 0.7723015809257314
+Joint-model mean precision: 0.9583818738045101
+Joint-model mean recall: 0.9444613213369557
+Joint-model mean f1: 0.9511092484805079
+Joint-model mean AUC-ROC: 0.9806175662265904
+Joint-model mean AUC-PR: 0.954517390627015
+Current processing weight set (0.5,0.5)
+Current processing weight set (0.5,0.5)
+Message F1: 0.4372093023255814
+Issue F1: 0.2102564102564103
+Patch F1: 0.2144638403990025
+
+php to predict redis
+Testing result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.5662650602409639
+Log message mean recall: 0.3560606060606061
+Log message mean f1: 0.4372093023255814
+Issue mean precision: 0.15891472868217055
+Issue mean recall: 0.3106060606060606
+Issue mean f1: 0.2102564102564103
+Patch mean precision: 0.15985130111524162
+Patch mean recall: 0.32575757575757575
+Patch mean f1: 0.2144638403990025
+Joint-model mean precision: 0.5897435897435898
+Joint-model mean recall: 0.3484848484848485
+Joint-model mean f1: 0.4380952380952381
+Joint-model mean AUC-ROC: 0.6838624338624338
+Joint-model mean AUC-PR: 0.36108010402471424
+
+php to predict imagemagick
+Testing result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.9272727272727272
+Log message mean recall: 0.20481927710843373
+Log message mean f1: 0.3355263157894737
+Issue mean precision: 0.2237871674491393
+Issue mean recall: 0.5742971887550201
+Issue mean f1: 0.32207207207207206
+Patch mean precision: 0.21971830985915494
+Patch mean recall: 0.3132530120481928
+Patch mean f1: 0.2582781456953642
+Joint-model mean precision: 0.9272727272727272
+Joint-model mean recall: 0.20481927710843373
+Joint-model mean f1: 0.3355263157894737
+Joint-model mean AUC-ROC: 0.8566809953381365
+Joint-model mean AUC-PR: 0.6315910046105541
+
+predict imagemagick
+Current processing weight set (0.5,0.5)
+Message F1: 0.33442622950819667
+Issue F1: 0.30099009900990104
+Patch F1: 0.2677165354330709
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.9107142857142857
+Log message mean recall: 0.20481927710843373
+Log message mean f1: 0.33442622950819667
+Issue mean precision: 0.29343629343629346
+Issue mean recall: 0.3089430894308943
+Issue mean f1: 0.30099009900990104
+Patch mean precision: 0.22020725388601037
+Patch mean recall: 0.3413654618473896
+Patch mean f1: 0.2677165354330709
+Joint-model mean precision: 0.9090909090909091
+Joint-model mean recall: 0.20080321285140562
+Joint-model mean f1: 0.3289473684210526
+Joint-model mean AUC-ROC: 0.9203399945162175
+Joint-model mean AUC-PR: 0.7952463309964068
+
+predict v8
+Current processing weight set (0.5,0.5)
+Message F1: 0.4824120603015075
+Issue F1: 0.1708542713567839
+Patch F1: 0.23417721518987342
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.7164179104477612
+Log message mean recall: 0.36363636363636365
+Log message mean f1: 0.4824120603015075
+Issue mean precision: 0.12781954887218044
+Issue mean recall: 0.25757575757575757
+Issue mean f1: 0.1708542713567839
+Patch mean precision: 0.20108695652173914
+Patch mean recall: 0.2803030303030303
+Patch mean f1: 0.23417721518987342
+Joint-model mean precision: 0.7719298245614035
+Joint-model mean recall: 0.3333333333333333
+Joint-model mean f1: 0.46560846560846564
+Joint-model mean AUC-ROC: 0.7938569367140795
+Joint-model mean AUC-PR: 0.527974586079794
+
+predict redis
+Current processing weight set (0.5,0.5)
+Message F1: 0.5309090909090908
+Issue F1: 0.34532374100719426
+Patch F1: 0.2713864306784661
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.5104895104895105
+Log message mean recall: 0.553030303030303
+Log message mean f1: 0.5309090909090908
+Issue mean precision: 0.25263157894736843
+Issue mean recall: 0.5454545454545454
+Issue mean f1: 0.34532374100719426
+Patch mean precision: 0.2222222222222222
+Patch mean recall: 0.3484848484848485
+Patch mean f1: 0.2713864306784661
+Joint-model mean precision: 0.5726495726495726
+Joint-model mean recall: 0.5075757575757576
+Joint-model mean f1: 0.5381526104417671
+Joint-model mean AUC-ROC: 0.8420063732563733
+Joint-model mean AUC-PR: 0.5234212785694164
+
+predict php
+Current processing weight set (0.5,0.5)
+Message F1: 0.7446808510638299
+Issue F1: 0.23936696340257166
+Patch F1: 0.4160756501182033
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.8584905660377359
+Log message mean recall: 0.6575144508670521
+Log message mean f1: 0.7446808510638299
+Issue mean precision: 0.37577639751552794
+Issue mean recall: 0.17561683599419448
+Issue mean f1: 0.23936696340257166
+Patch mean precision: 0.45753899480069327
+Patch mean recall: 0.3815028901734104
+Patch mean f1: 0.4160756501182033
+Joint-model mean precision: 0.8732943469785575
+Joint-model mean recall: 0.6473988439306358
+Joint-model mean f1: 0.7435684647302904
+Joint-model mean AUC-ROC: 0.8712676730198408
+Joint-model mean AUC-PR: 0.7835144255035917
+
+all 4 repos 5-folds
+Log message mean precision: 0.9023024094231686
+Log message mean recall: 0.9029513007837991
+Log message mean f1: 0.9020519436884982
+Issue mean precision: 0.3797876232658841
+Issue mean recall: 0.2391693847994169
+Issue mean f1: 0.2922003241859886
+Patch mean precision: 0.5585370941214942
+Patch mean recall: 0.6036066686768203
+Patch mean f1: 0.5794745752749194
+Joint-model mean precision: 0.9069136217539235
+Joint-model mean recall: 0.8732855189559764
+Joint-model mean f1: 0.8893426579353925
+Joint-model mean AUC-ROC: 0.9666934933860855
+Joint-model mean AUC-PR: 0.9049228011249388
+
+4*20 commits
+Current processing weight set (0.5,0.5)
+Message F1: 0.5484045429962141
+Issue F1: 0.21086855550394798
+Patch F1: 0.29769858945805494
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.7647058823529411
+Log message mean recall: 0.4274873524451939
+Log message mean f1: 0.5484045429962141
+Issue mean precision: 0.22998986828774062
+Issue mean recall: 0.1946826758147513
+Issue mean f1: 0.21086855550394798
+Patch mean precision: 0.26591511936339524
+Patch mean recall: 0.33811129848229343
+Patch mean f1: 0.29769858945805494
+Joint-model mean precision: 0.8164383561643835
+Joint-model mean recall: 0.25126475548060706
+Joint-model mean f1: 0.38426821405544803
+Joint-model mean AUC-ROC: 0.8571792016905605
+Joint-model mean AUC-PR: 0.6577584384380528
+
+4*40 commits
+Current processing weight set (0.5,0.5)
+Message F1: 0.636968766001024
+Issue F1: 0.2674323215750615
+Patch F1: 0.33838786911412605
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.7923566878980892
+Log message mean recall: 0.5325342465753424
+Log message mean f1: 0.636968766001024
+Issue mean precision: 0.2529092319627618
+Issue mean recall: 0.28372497824194953
+Issue mean f1: 0.2674323215750615
+Patch mean precision: 0.31689088191330345
+Patch mean recall: 0.363013698630137
+Patch mean f1: 0.33838786911412605
+Joint-model mean precision: 0.8317307692307693
+Joint-model mean recall: 0.2962328767123288
+Joint-model mean f1: 0.4368686868686869
+Joint-model mean AUC-ROC: 0.8873750677570251
+Joint-model mean AUC-PR: 0.7087400832965131
+
+4*60 commits
+Current processing weight set (0.5,0.5)
+Message F1: 0.7099200752233192
+Issue F1: 0.2690541781450872
+Patch F1: 0.3064295485636115
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.785639958376691
+Log message mean recall: 0.6475128644939966
+Log message mean f1: 0.7099200752233192
+Issue mean precision: 0.28419010669253153
+Issue mean recall: 0.25544899738448124
+Issue mean f1: 0.2690541781450872
+Patch mean precision: 0.32716650438169426
+Patch mean recall: 0.2881646655231561
+Patch mean f1: 0.3064295485636115
+Joint-model mean precision: 0.8167701863354038
+Joint-model mean recall: 0.451114922813036
+Joint-model mean f1: 0.5812154696132596
+Joint-model mean AUC-ROC: 0.8909804606616416
+Joint-model mean AUC-PR: 0.7097520841371243
+
+4*80 commits
+Current processing weight set (0.5,0.5)
+Message F1: 0.7780979827089337
+Issue F1: 0.2428884026258206
+Patch F1: 0.361878453038674
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.8728448275862069
+Log message mean recall: 0.7019064124783362
+Log message mean f1: 0.7780979827089337
+Issue mean precision: 0.3203463203463203
+Issue mean recall: 0.19559471365638767
+Issue mean f1: 0.2428884026258206
+Patch mean precision: 0.38605108055009824
+Patch mean recall: 0.34055459272097055
+Patch mean f1: 0.361878453038674
+Joint-model mean precision: 0.9112271540469974
+Joint-model mean recall: 0.6048526863084922
+Joint-model mean f1: 0.7270833333333334
+Joint-model mean AUC-ROC: 0.9104579200314662
+Joint-model mean AUC-PR: 0.8150224913208741
+
+4*100 commits
+Current processing weight set (0.5,0.5)
+Message F1: 0.7905660377358491
+Issue F1: 0.31176470588235294
+Patch F1: 0.44019528071602926
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.8199608610567515
+Log message mean recall: 0.7632058287795993
+Log message mean f1: 0.7905660377358491
+Issue mean precision: 0.33125
+Issue mean recall: 0.29444444444444445
+Issue mean f1: 0.31176470588235294
+Patch mean precision: 0.3977941176470588
+Patch mean recall: 0.49271402550091076
+Patch mean f1: 0.44019528071602926
+Joint-model mean precision: 0.8604143947655398
+Joint-model mean recall: 0.7185792349726776
+Joint-model mean f1: 0.7831265508684864
+Joint-model mean AUC-ROC: 0.9228904980960558
+Joint-model mean AUC-PR: 0.8119732277871118
+
+4*120 commits
+Current processing weight set (0.5,0.5)
+Message F1: 0.7929220468675275
+Issue F1: 0.29891838741396265
+Patch F1: 0.3919362400375059
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.8416243654822335
+Log message mean recall: 0.7495479204339964
+Log message mean f1: 0.7929220468675275
+Issue mean precision: 0.32101372756071805
+Issue mean recall: 0.2796688132474701
+Issue mean f1: 0.29891838741396265
+Patch mean precision: 0.4070107108081792
+Patch mean recall: 0.3779385171790235
+Patch mean f1: 0.3919362400375059
+Joint-model mean precision: 0.8845177664974619
+Joint-model mean recall: 0.6301989150090416
+Joint-model mean f1: 0.7360084477296726
+Joint-model mean AUC-ROC: 0.9277848855517444
+Joint-model mean AUC-PR: 0.8140366215648346
+
+4*200 commits
+Current processing weight set (0.5,0.5)
+Message F1: 0.8251339503166099
+Issue F1: 0.31226765799256506
+Patch F1: 0.4397859054415701
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 0.8361303060217177
+Log message mean recall: 0.8144230769230769
+Log message mean f1: 0.8251339503166099
+Issue mean precision: 0.34146341463414637
+Issue mean recall: 0.2876712328767123
+Issue mean f1: 0.31226765799256506
+Patch mean precision: 0.4101497504159734
+Patch mean recall: 0.4740384615384615
+Patch mean f1: 0.4397859054415701
+Joint-model mean precision: 0.8748551564310545
+Joint-model mean recall: 0.7259615384615384
+Joint-model mean f1: 0.7934839726747241
+Joint-model mean AUC-ROC: 0.9348446291285487
+Joint-model mean AUC-PR: 0.8339610698964799

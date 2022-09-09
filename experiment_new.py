@@ -416,7 +416,7 @@ def retrieve_top_features(classifier, vectorizer):
 @click.option('--min_df', default=1)
 @click.option('--use_linked_commits_only', default=False, type=bool)
 @click.option('--use_issue_classifier', default=True, type=bool)
-@click.option('--fold_to_run', default=10, type=int)
+@click.option('--fold_to_run', default=1, type=int)
 @click.option('--use_stacking_ensemble', default=True, type=bool)
 @click.option('--dataset', default='', type=str)
 @click.option('--tf-idf-threshold', default=-1, type=float)
@@ -429,7 +429,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     global file_path
     # if dataset != '':
     #     file_path = 'MSR2019/experiment/' + dataset
-    file_path = 'enhanced_dataset_max-features-500.txt'
+    file_path = "prediction/php/enhanced_dataset_with_issues.txt"
     print("Dataset: {}".format(file_path))
 
     options = feature_options.read_option_from_command_line(size, 0, ignore_number,
@@ -452,8 +452,23 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     positive_weights = options.positive_weights
 
     records = data_loader.load_records(file_path)
-
     random.shuffle(records)
+    tmp1 = data_loader.load_records("prediction/redis/enhanced_dataset_with_issues.txt")
+    random.shuffle(tmp1)
+    tmp2 = data_loader.load_records("prediction/v8/enhanced_dataset_with_issues.txt")
+    random.shuffle(tmp2)
+    tmp3 = data_loader.load_records("prediction/image/enhanced_dataset_with_issues.txt")
+    random.shuffle(tmp3)
+    num_to_add = 200
+    train_data_indices = list(np.random.choice(list(range(len(records))), num_to_add, replace=False))
+    train_data_indices += list(np.random.choice(list(range(len(records), len(tmp1)+len(records))), num_to_add, replace=False))
+    train_data_indices += list(np.random.choice(list(range(len(tmp1)+len(records), len(tmp1)+len(records)+len(tmp2))), num_to_add, replace=False))
+    train_data_indices += list(np.random.choice(list(range(len(tmp1)+len(records)+len(tmp2), len(tmp3)+len(tmp1)+len(records)+len(tmp2))), num_to_add, replace=False))
+    records += tmp1
+    records += tmp2
+    records += tmp3
+    test_data_indices = [i for i in range(len(records)) if i not in train_data_indices]
+    # random.shuffle(records)
 
     if options.use_linked_commits_only:
         new_records = []
@@ -538,22 +553,17 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
     directory = os.path.dirname(os.path.abspath(__file__))
 
-    for train_data_indices, test_data_indices in k_fold.split(records):
+    for _ in range(options.fold_to_run):
         fold_count += 1
-        if run_fold != -1 and fold_count != run_fold:
-            continue
         output_file_name = "fold_" + str(fold_count) + "_" + str(date) + "_" + str(time) + ".txt"
         output_file_path = os.path.join(directory, "classifier_output/" + output_file_name)
-        if fold_count > options.fold_to_run:
-            break
         with open("result.txt", "a") as f:
             f.write("Processing fold number: {}\n".format(fold_count))
         print("Processing fold number: {}".format(fold_count))
         calculate_vocabulary(records, train_data_indices, commit_message_vectorizer,
                              issue_vectorizer, patch_vectorizer, options)
 
-        train_data, test_data = retrieve_data(records, train_data_indices, test_data_indices)
-
+        train_data, test_data = retrieve_data(records, train_data_indices, test_data_indices) 
         log_x_train, log_y_train = calculate_log_message_feature_vector(train_data, commit_message_vectorizer)
         log_x_test, log_y_test = calculate_log_message_feature_vector(test_data, commit_message_vectorizer)
 

@@ -8,6 +8,7 @@ prediction/
 sim_scores/
 jira_issue_corpus/
 issue_corpus_new/
+issue_corpus_new_old/
 github_issue_corpus_processed.txt
 *.npz
 *.joblib
